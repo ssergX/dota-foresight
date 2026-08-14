@@ -1,0 +1,66 @@
+{
+  "match_id": 8001,
+  "duration": 1800,
+  "radiant_win": false,
+  "version": 21,
+  "teamfights": [
+    {
+      "start": 820,
+      "end": 860,
+      "deaths": 3,
+      "players": [
+        {"deaths": 1, "gold_delta": -400, "xp_delta": -200, "damage": 500},
+        {"deaths": 0, "gold_delta": 300, "xp_delta": 250, "damage": 900}
+      ]
+    }
+  ],
+  "objectives": [
+    {"time": 610, "type": "CHAT_MESSAGE_TOWER_KILL", "slot": 1, "key": null},
+    {"time": 1500, "type": "CHAT_MESSAGE_ROSHAN_KILL", "slot": null, "key": "3"}
+  ],
+  "players": [
+    {
+      "account_id": 111,
+      "player_slot": 0,
+      "hero_id": 8,
+      "kills": 4,
+      "deaths": 9,
+      "assists": 6,
+      "gold_per_min": 420,
+      "xp_per_min": 480,
+      "last_hits": 140,
+      "gold_t": [0, 300, 900, 1500],
+      "xp_t": [0, 400, 1100, 1700],
+      "lh_t": [0, 8, 22, 40],
+      "kills_log": [{"time": 842, "key": "npc_dota_hero_lion"}],
+      "purchase_log": [{"time": 900, "key": "black_king_bar"}],
+      "obs_log": [{"time": 240, "x": 120, "y": 118, "z": 0}],
+      "sen_log": [],
+      "benchmarks": {
+        "gold_per_min": {"raw": 420, "pct": 0.32},
+        "xp_per_min": {"raw": 480, "pct": 0.35},
+        "last_hits_per_min": {"raw": 4.6, "pct": 0.28},
+        "hero_damage_per_min": {"raw": 320, "pct": 0.4}
+      }
+    },
+    {
+      "account_id": 222,
+      "player_slot": 128,
+      "hero_id": 26,
+      "kills": 9,
+      "deaths": 4,
+      "assists": 10,
+      "gold_per_min": 560,
+      "xp_per_min": 610,
+      "last_hits": 210,
+      "gold_t": [0, 400, 1200, 2100],
+      "xp_t": [0, 500, 1400, 2300],
+      "lh_t": [0, 12, 34, 62],
+      "kills_log": [],
+      "purchase_log": [{"time": 700, "key": "blink"}],
+      "obs_log": [],
+      "sen_log": [],
+      "benchmarks": {"gold_per_min": {"raw": 560, "pct": 0.78}}
+    }
+  ]
+}
