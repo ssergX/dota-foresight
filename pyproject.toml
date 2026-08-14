@@ -1,0 +1,27 @@
+[project]
+name = "dota-coach"
+version = "0.1.0"
+description = "Личный пост-матч AI-тренер по Dota 2 (MVP без ЛЛМ)"
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.31",
+    "opencv-python>=4.9",
+    "pytesseract>=0.3.10",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+dota-coach = "dota_coach.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/dota_coach"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
