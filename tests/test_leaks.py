@@ -32,3 +32,22 @@ def test_detects_farm_feeding_and_warding_leaks():
 def test_clean_player_has_no_leaks():
     matches = [_m(i, 111, gpm_pct=0.7, deaths=3, obs=8) for i in range(5)]
     assert detect_leaks(matches, 111) == []
+
+
+def test_leaks_select_worst_offender_matches_in_order():
+    # (match_id, gpm_pct, deaths, obs) — deliberately varied per match
+    specs = [
+        (0, 0.30, 5, 5),
+        (1, 0.10, 15, 0),
+        (2, 0.20, 12, 1),
+        (3, 0.35, 9, 2),
+        (4, 0.15, 20, 3),
+    ]
+    matches = [_m(mid, 111, gpm, d, obs) for (mid, gpm, d, obs) in specs]
+    leaks = {l.key: l for l in detect_leaks(matches, 111)}
+    # farm: lowest gpm pct first (ascending) -> 0.10(m1), 0.15(m4), 0.20(m2)
+    assert leaks["farm_below_bracket"].example_matches == [1, 4, 2]
+    # feeding: most deaths first (descending) -> 20(m4), 15(m1), 12(m2)
+    assert leaks["feeding"].example_matches == [4, 1, 2]
+    # low_warding: fewest wards first (ascending) -> 0(m1), 1(m2), 2(m3)
+    assert leaks["low_warding"].example_matches == [1, 2, 3]
