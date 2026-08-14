@@ -34,6 +34,10 @@ def _video_offset(video_path: str, duration: int) -> float:
         ocr=tesseract_clock_ocr,
         crop=crop_hud_clock,
     )
+    if not reads:
+        print("warning: не удалось считать игровые часы с HUD — видео не синхронизировано "
+              "(подстрой crop_hud_clock box под своё разрешение); offset=0")
+        return 0.0
     return compute_offset(reads)
 
 

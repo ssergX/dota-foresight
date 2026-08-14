@@ -32,12 +32,18 @@ def _teamfight_events(match: Match, me: PlayerMatch) -> list[EventCandidate]:
     return out
 
 
+def _slot_index(player_slot: int) -> int:
+    # OpenDota's 0-9 player index: radiant slots 0-4 == player_slot; dire slots 5-9 == player_slot - 123.
+    return player_slot if player_slot < 128 else player_slot - 123
+
+
 def _objective_events(match: Match, me: PlayerMatch) -> list[EventCandidate]:
     out: list[EventCandidate] = []
     for o in match.objectives:
         out.append(EventCandidate(
             type=EventType.OBJECTIVE, game_time=o.time,
-            involves_me=(o.slot is not None and o.slot == me.player_slot),
+            involves_me=(o.slot is not None
+                         and o.slot in (me.player_slot, _slot_index(me.player_slot))),
             summary=f"{o.type} на {o.time // 60}:{o.time % 60:02d}",
             data={"objective_type": o.type},
         ))

@@ -51,3 +51,18 @@ def test_objective_not_involving_me_when_slot_none():
         if e.type == EventType.OBJECTIVE and e.data["objective_type"] == "CHAT_MESSAGE_ROSHAN_KILL"
     )
     assert roshan.involves_me is False
+
+
+def test_objective_involves_dire_player_via_slot_index():
+    from dota_coach.models import Match, Objective, PlayerMatch
+    me = PlayerMatch(
+        account_id=222, player_slot=128, hero_id=1, is_radiant=False,
+        kills=0, deaths=0, assists=0, gold_per_min=0, xp_per_min=0, last_hits=0,
+        gold_t=[], xp_t=[], lh_t=[], kills_log=[], purchase_log=[], obs_log=[], sen_log=[],
+        benchmarks={},
+    )
+    m = Match(match_id=1, duration=100, radiant_win=True, players=[me],
+              teamfights=[], objectives=[Objective(time=600, type="CHAT_MESSAGE_TOWER_KILL", slot=5)],
+              parsed=True)
+    obj = next(e for e in extract_events(m, account_id=222) if e.type == EventType.OBJECTIVE)
+    assert obj.involves_me is True  # dire player_slot 128 -> OpenDota index 5
