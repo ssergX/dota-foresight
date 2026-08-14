@@ -33,3 +33,24 @@ def test_report_without_video_has_no_video_tag():
     html = render_report(8001, moments=[_moment(50, "x")], leaks=[],
                          video_filename=None, offset=0.0)
     assert "<video" not in html
+
+
+def test_report_escapes_html_special_chars():
+    moments = [_moment(100, "<b>drama</b> & risk")]
+    leak = Leak(key="x", title="<script>alert(1)</script>", magnitude="a & b",
+                example_matches=[1], confidence=Confidence.HIGH)
+    html = render_report(8001, moments, leaks=[leak], video_filename=None, offset=0.0)
+    # raw HTML-special content must NOT appear unescaped
+    assert "<b>drama</b>" not in html
+    assert "<script>alert(1)</script>" not in html
+    # escaped forms MUST appear
+    assert "&lt;b&gt;drama&lt;/b&gt;" in html
+    assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+
+
+def test_report_without_video_has_no_seek_button_or_script():
+    html = render_report(8001, moments=[_moment(50, "x")], leaks=[],
+                         video_filename=None, offset=0.0)
+    assert "<button" not in html          # CSS rule is 'button{', not '<button'
+    assert 'onclick="seek(' not in html
+    assert "<script" not in html
