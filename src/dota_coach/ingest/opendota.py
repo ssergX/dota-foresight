@@ -28,7 +28,10 @@ def fetch_match(match_id: int, cache_dir: Path = Path("cache")) -> dict:
     resp = requests.get(f"{BASE}/matches/{match_id}", timeout=30)
     resp.raise_for_status()
     data = resp.json()
-    cached.write_text(json.dumps(data), encoding="utf-8")
+    # Only cache parsed matches; an unparsed response must be re-fetched later
+    # (after the user requests a parse), so don't freeze it on disk.
+    if data.get("version") is not None:
+        cached.write_text(json.dumps(data), encoding="utf-8")
     return data
 
 
