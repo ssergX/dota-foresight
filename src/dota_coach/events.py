@@ -6,6 +6,9 @@ _NETWORTH_DROP = -500  # gold drop within one minute flagged as a swing
 
 
 def _my_index(match: Match, me: PlayerMatch) -> int:
+    # OpenDota emits each teamfight's `players` array parallel to the match's
+    # `players` array (same index == same player slot), and normalize() preserves
+    # that order — so my index in match.players is also my index in tf.players.
     return match.players.index(me)
 
 

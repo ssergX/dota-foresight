@@ -38,3 +38,16 @@ def test_networth_swing_emitted_for_sharp_drop():
     events = extract_events(m, account_id=111)
     swings = [e for e in events if e.type == EventType.NETWORTH_SWING]
     assert any(e.data["delta"] <= -500 for e in swings)
+
+
+def test_extract_events_empty_when_account_absent():
+    assert extract_events(_match(), account_id=999) == []
+
+
+def test_objective_not_involving_me_when_slot_none():
+    events = extract_events(_match(), account_id=111)
+    roshan = next(
+        e for e in events
+        if e.type == EventType.OBJECTIVE and e.data["objective_type"] == "CHAT_MESSAGE_ROSHAN_KILL"
+    )
+    assert roshan.involves_me is False
