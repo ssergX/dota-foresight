@@ -9,7 +9,7 @@ from dota_coach.ingest.normalize import normalize
 from dota_coach.ingest.opendota import fetch_match, fetch_recent
 from dota_coach.leaks import detect_leaks
 from dota_coach.models import Match
-from dota_coach.report import render_report
+from dota_coach.report import render_coach_html, render_report
 from dota_coach.scoring import score_events
 from dota_coach.video.align import (
     compute_offset, crop_hud_clock, opencv_frame_at, sample_clock_reads, tesseract_clock_ocr,
@@ -65,6 +65,42 @@ def _cmd_leaks(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_coach(args: argparse.Namespace) -> int:
+    ids = fetch_recent(args.account_id, args.n)
+    matches = [normalize(fetch_match(mid)) for mid in ids]
+
+    if args.dry_run:
+        from dota_coach.coach.coach import _select_focus
+        from dota_coach.coach.history import latest_brief
+        from dota_coach.coach.principles import principles_for
+        from dota_coach.coach.progress import compare_focus
+        from dota_coach.coach.prompt import build_coach_prompt
+        from dota_coach.leaks import detect_leaks
+
+        leaks = detect_leaks(matches, args.account_id)
+        focus = _select_focus(leaks)
+        if focus is None:
+            print("Системных ликов по этой серии не найдено — ЛЛМ не нужен.")
+            return 0
+        prior = latest_brief(args.account_id)
+        progress = compare_focus(prior, leaks)
+        messages = build_coach_prompt(leaks, progress, principles_for(focus.key), prior, focus.key)
+        for msg in messages:
+            print(f"--- {msg['role']} ---\n{msg['content']}\n")
+        return 0
+
+    from dota_coach.coach.coach import run_coach
+    from dota_coach.coach.llm import OpenAICompatibleLLM
+    from dota_coach.leaks import detect_leaks
+
+    brief = run_coach(matches, args.account_id, OpenAICompatibleLLM())
+    leaks = detect_leaks(matches, args.account_id)
+    html = render_coach_html(brief, leaks)
+    Path(args.out).write_text(html, encoding="utf-8")
+    print(f"coach brief over {len(matches)} matches -> {args.out}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="dota-coach")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -82,6 +118,13 @@ def main(argv: list[str] | None = None) -> int:
     l.add_argument("--n", type=int, default=20)
     l.add_argument("--out", default="leaks.html")
     l.set_defaults(func=_cmd_leaks)
+
+    c = sub.add_parser("coach", help="системный ЛЛМ-разбор по серии матчей")
+    c.add_argument("--account-id", type=int, required=True, dest="account_id")
+    c.add_argument("--n", type=int, default=20)
+    c.add_argument("--out", default="coach.html")
+    c.add_argument("--dry-run", action="store_true", dest="dry_run")
+    c.set_defaults(func=_cmd_coach)
 
     args = parser.parse_args(argv)
     return args.func(args)
