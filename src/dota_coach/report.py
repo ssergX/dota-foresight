@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import html as _html
 
+from dota_coach.coach.brief import CoachBrief
+from dota_coach.coach.progress import ProgressNote
 from dota_coach.models import Leak, ScoredMoment
 from dota_coach.video.align import video_time_for
 
@@ -63,4 +65,48 @@ def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
 <ul>{moment_items}</ul>
 {leaks_section}
 {script}
+</body></html>"""
+
+
+def _coach_drill_row(text: str, metric_ref: str) -> str:
+    ref = f" <span class='meta'>[{_html.escape(metric_ref)}]</span>" if metric_ref else ""
+    return f"<li>{_html.escape(text)}{ref}</li>"
+
+
+def _coach_leak_row(leak: Leak) -> str:
+    return (f"<li><b>{_html.escape(leak.title)}</b>: {_html.escape(leak.magnitude)}</li>")
+
+
+def render_coach_html(brief: CoachBrief, leaks: list[Leak],
+                      progress: ProgressNote | None = None) -> str:
+    headline = _html.escape(brief.headline)
+    if not brief.focus_leak_key:
+        body = f"<h1>{headline}</h1>"
+    else:
+        diagnosis = _html.escape(brief.diagnosis)
+        why = _html.escape(brief.why_it_costs)
+        drills = "\n".join(_coach_drill_row(d.text, d.metric_ref) for d in brief.drills)
+        note = brief.progress_note or (progress.text if progress else None)
+        progress_block = (f"<h2>Прогресс</h2><p class='progress'>{_html.escape(note)}</p>"
+                          if note else "")
+        leaks_block = "\n".join(_coach_leak_row(l) for l in leaks)
+        body = (
+            f"<h1>{headline}</h1>"
+            f"<h2>Диагноз</h2><p>{diagnosis}</p>"
+            f"<h2>Почему это топит</h2><p>{why}</p>"
+            f"<h2>Дриллы на следующие игры</h2><ul>{drills}</ul>"
+            f"{progress_block}"
+            f"<h2>Все системные лики</h2><ul>{leaks_block}</ul>"
+        )
+
+    return f"""<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<title>Dota Coach — системный разбор</title>
+<style>
+  body{{font-family:sans-serif;max-width:820px;margin:24px auto;color:#eee;background:#1b1b1f}}
+  h1{{color:#fff}} h2{{color:#9ab;margin-top:22px}}
+  .meta{{color:#9ab;font-size:12px}} .progress{{color:#9d9}}
+  li{{margin:6px 0}}
+</style></head><body>
+{body}
 </body></html>"""
