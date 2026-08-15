@@ -51,3 +51,26 @@ def test_leaks_select_worst_offender_matches_in_order():
     assert leaks["feeding"].example_matches == [4, 1, 2]
     # low_warding: fewest wards first (ascending) -> 0(m1), 1(m2), 2(m3)
     assert leaks["low_warding"].example_matches == [1, 2, 3]
+
+
+def test_leaks_carry_numeric_fields():
+    matches = [_m(i, 111, gpm_pct=0.25, deaths=11, obs=1) for i in range(5)]
+    leaks = {l.key: l for l in detect_leaks(matches, 111)}
+
+    feeding = leaks["feeding"]
+    assert feeding.metric == "deaths_per_game"
+    assert feeding.value == 11.0
+    assert feeding.threshold == 8.0
+    assert feeding.direction == "lower_is_better"
+
+    farm = leaks["farm_below_bracket"]
+    assert farm.metric == "gpm_pct"
+    assert farm.value == 0.25
+    assert farm.threshold == 0.4
+    assert farm.direction == "higher_is_better"
+
+    warding = leaks["low_warding"]
+    assert warding.metric == "obs_per_game"
+    assert warding.value == 1.0
+    assert warding.threshold == 4.0
+    assert warding.direction == "higher_is_better"

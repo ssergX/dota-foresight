@@ -112,6 +112,11 @@ class Leak:
     magnitude: str
     example_matches: list[int] = field(default_factory=list)
     confidence: Confidence = Confidence.LOW
+    # числа для петли подотчётности и metric_ref (заполняются кодом):
+    metric: str = ""
+    value: float = 0.0
+    threshold: float = 0.0
+    direction: str = "lower_is_better"
 
 
 @dataclass(frozen=True)

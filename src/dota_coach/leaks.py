@@ -44,6 +44,10 @@ def detect_leaks(matches: list[Match], account_id: int | None) -> list[Leak]:
             magnitude=f"медиана GPM в p{int(median(gpms) * 100)}",
             example_matches=[r["match_id"] for r in worst],
             confidence=Confidence.HIGH,
+            metric="gpm_pct",
+            value=float(median(gpms)),
+            threshold=_FARM_PCT,
+            direction="higher_is_better",
         ))
 
     avg_deaths = mean(r["deaths"] for r in rows)
@@ -55,6 +59,10 @@ def detect_leaks(matches: list[Match], account_id: int | None) -> list[Leak]:
             magnitude=f"в среднем {avg_deaths:.1f} смертей за игру (порог {_DEATHS_MAX:.0f})",
             example_matches=[r["match_id"] for r in worst],
             confidence=Confidence.HIGH,
+            metric="deaths_per_game",
+            value=float(avg_deaths),
+            threshold=_DEATHS_MAX,
+            direction="lower_is_better",
         ))
 
     avg_obs = mean(r["obs"] for r in rows)
@@ -66,6 +74,10 @@ def detect_leaks(matches: list[Match], account_id: int | None) -> list[Leak]:
             magnitude=f"в среднем {avg_obs:.1f} обс-вардов за игру (порог {_OBS_MIN:.0f})",
             example_matches=[r["match_id"] for r in worst],
             confidence=Confidence.HIGH,
+            metric="obs_per_game",
+            value=float(avg_obs),
+            threshold=_OBS_MIN,
+            direction="higher_is_better",
         ))
 
     return leaks
