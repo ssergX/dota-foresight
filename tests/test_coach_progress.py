@@ -52,3 +52,23 @@ def test_flat_when_same_value():
     prior = _prior("feeding", "deaths_per_game", 9.0, "lower_is_better")
     curr = [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")]
     assert compare_focus(prior, curr).status == "flat"
+
+
+def test_gpm_regressed_higher_is_better():
+    prior = _prior("farm_below_bracket", "gpm_pct", 0.35, "higher_is_better")
+    curr = [_leak("farm_below_bracket", "gpm_pct", 0.25, 0.4, "higher_is_better")]
+    note = compare_focus(prior, curr)
+    assert note.status == "regressed"
+    assert "регресс" in note.text
+
+
+def test_flat_higher_is_better():
+    prior = _prior("farm_below_bracket", "gpm_pct", 0.30, "higher_is_better")
+    curr = [_leak("farm_below_bracket", "gpm_pct", 0.30, 0.4, "higher_is_better")]
+    assert compare_focus(prior, curr).status == "flat"
+
+
+def test_no_history_when_focus_key_empty():
+    prior = _prior("", "deaths_per_game", 11.0, "lower_is_better")
+    note = compare_focus(prior, [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")])
+    assert note.status == "no_history"
