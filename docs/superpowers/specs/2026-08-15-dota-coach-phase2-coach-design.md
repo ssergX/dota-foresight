@@ -68,10 +68,16 @@ class Leak:
     direction: str = "lower_is_better"   # или "higher_is_better"
 ```
 
-`detect_leaks` заполняет эти поля для всех трёх текущих ликов
-(`farm_below_bracket` → `gpm_pct`, higher_is_better; `feeding` → `deaths_per_game`,
-lower_is_better; `low_warding` → `obs_per_game`, higher_is_better). Правка теста
-`test_leaks.py` — проверить наличие числовых полей.
+`detect_leaks` заполняет эти поля для всех трёх текущих ликов:
+- `farm_below_bracket` → `metric="gpm_pct"`, `value=median(gpm_pct)`,
+  `threshold=0.4`, `direction="higher_is_better"`;
+- `feeding` → `metric="deaths_per_game"`, `value=avg_deaths`, `threshold=8.0`,
+  `direction="lower_is_better"`;
+- `low_warding` → `metric="obs_per_game"`, `value=avg_obs`, `threshold=4.0`,
+  `direction="higher_is_better"`.
+
+Значения совпадают с уже существующими порогами (`_FARM_PCT/_DEATHS_MAX/_OBS_MIN`).
+Правка теста `test_leaks.py` — проверить наличие и корректность числовых полей.
 
 ### Новое: `coach/principles.md` + `coach/principles.py`
 
@@ -161,12 +167,19 @@ build_coach_prompt(leaks: list[Leak],
 run_coach(matches: list[Match], account_id: int | None,
           llm: CoachLLM, cache_dir=Path("cache")) -> CoachBrief
 ```
-Шаги: `detect_leaks` → выбрать фокус (самый серьёзный лик по фикс. приоритету/дельте
-от порога) → `load_history` → `compare_focus` → `principles_for(focus.key)` →
-`build_coach_prompt` → `llm.complete` → `parse_brief` → проставить `progress_note`
-из `ProgressNote` → `save_brief` → вернуть `CoachBrief`.
-Крайний случай: ликов нет → вернуть «чистый» бриф без вызова ЛЛМ (headline «Системных
-ликов не найдено», без дриллов), либо пропустить сохранение — уточнить в плане.
+Шаги: `detect_leaks` → выбрать фокус → `load_history` → `compare_focus` →
+`principles_for(focus.key)` → `build_coach_prompt` → `llm.complete` → `parse_brief` →
+проставить `progress_note` из `ProgressNote` → `save_brief` → вернуть `CoachBrief`.
+
+**Выбор фокуса (детерминированно, код):** лик с наибольшим нормированным отклонением
+от порога `abs(value - threshold) / threshold` («худший нарушитель»); при равенстве —
+фиксированный приоритет `["feeding", "farm_below_bracket", "low_warding"]`.
+
+**Крайний случай «ликов нет»:** возвращаем «чистый» бриф `CoachBrief(focus_leak_key="",
+headline="Системных ликов по этой серии не найдено", diagnosis="", why_it_costs="",
+drills=[])` **без вызова ЛЛМ**; `progress_note` заполняется из `compare_focus` (если
+прошлый фокус-лик исчез — это фиксируется как «лик ушёл»); бриф **сохраняется**, чтобы
+история оставалась непрерывной.
 
 ### Правка: `report.py` — `render_coach_html`
 
