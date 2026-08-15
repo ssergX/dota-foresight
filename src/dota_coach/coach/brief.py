@@ -29,7 +29,7 @@ def parse_brief(raw: str | dict) -> CoachBrief:
     data = json.loads(raw) if isinstance(raw, str) else raw
     if not isinstance(data, dict):
         raise ValueError("coach brief должен быть JSON-объектом")
-    if "focus_leak_key" not in data:
+    if data.get("focus_leak_key") is None:
         raise ValueError("coach brief без focus_leak_key")
     drills_raw = data.get("drills", [])
     if not isinstance(drills_raw, list):
@@ -38,7 +38,7 @@ def parse_brief(raw: str | dict) -> CoachBrief:
     drills: list[Drill] = []
     for d in drills_raw:
         if isinstance(d, dict):
-            drills.append(Drill(text=str(d.get("text", "")), metric_ref=str(d.get("metric_ref", ""))))
+            drills.append(Drill(text=str(d.get("text") or ""), metric_ref=str(d.get("metric_ref") or "")))
         else:
             drills.append(Drill(text=str(d), metric_ref=""))
     if drills and all(not d.metric_ref for d in drills):
@@ -46,15 +46,15 @@ def parse_brief(raw: str | dict) -> CoachBrief:
 
     return CoachBrief(
         focus_leak_key=str(data["focus_leak_key"]),
-        headline=str(data.get("headline", "")),
-        diagnosis=str(data.get("diagnosis", "")),
-        why_it_costs=str(data.get("why_it_costs", "")),
+        headline=str(data.get("headline") or ""),
+        diagnosis=str(data.get("diagnosis") or ""),
+        why_it_costs=str(data.get("why_it_costs") or ""),
         drills=drills,
         progress_note=data.get("progress_note"),
         generated_for_matches=list(data.get("generated_for_matches", [])),
-        focus_metric=str(data.get("focus_metric", "")),
+        focus_metric=str(data.get("focus_metric") or ""),
         focus_value=float(data.get("focus_value", 0.0)),
-        focus_direction=str(data.get("focus_direction", "lower_is_better")),
+        focus_direction=str(data.get("focus_direction") or "lower_is_better"),
     )
 
 

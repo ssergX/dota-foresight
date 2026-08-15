@@ -42,3 +42,8 @@ def test_brief_dict_round_trip_preserves_focus_snapshot():
     assert again.focus_direction == "higher_is_better"
     assert again.progress_note == "варды p1 → p3 — прогресс"
     assert again.drills[0].text == "ставь обс на руну"
+
+
+def test_parse_brief_null_focus_raises():
+    with pytest.raises(ValueError):
+        parse_brief({"focus_leak_key": None, "drills": []})
