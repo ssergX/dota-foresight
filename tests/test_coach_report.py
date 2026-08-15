@@ -42,3 +42,14 @@ def test_coach_report_no_leaks_message():
     html = render_coach_html(empty, [])
     assert "не найдено" in html
     assert "<script>" not in html  # без инъекций
+
+
+def test_coach_report_uses_progress_arg_when_no_progress_note():
+    from dota_coach.coach.progress import ProgressNote
+
+    brief = _brief()
+    brief.progress_note = None
+    note = ProgressNote(status="improved", metric="obs_per_game", prev_value=1.0,
+                        curr_value=3.0, text="варды p1 → p3 — прогресс")
+    html = render_coach_html(brief, [_leak()], note)
+    assert "варды p1 → p3 — прогресс" in html

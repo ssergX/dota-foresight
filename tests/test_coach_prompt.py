@@ -22,8 +22,8 @@ def test_prompt_has_system_and_user_roles():
 def test_prompt_contains_numbers_focus_and_principles():
     msgs = build_coach_prompt(_leaks(), None, "принципы фидинга", None, "feeding")
     user = msgs[1]["content"]
-    assert "11.0" in user            # value
-    assert "8.0" in user             # threshold
+    assert "11.000" in user          # value
+    assert "8.000" in user           # threshold
     assert "feeding" in user         # focus key
     assert "принципы фидинга" in user
 

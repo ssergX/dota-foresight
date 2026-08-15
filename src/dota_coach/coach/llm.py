@@ -36,11 +36,14 @@ class OpenAICompatibleLLM:
     def __init__(self, base_url: str | None = None, api_key: str | None = None,
                  model: str | None = None, cache_dir: Path = Path("cache") / "coach_llm",
                  timeout: float = 60.0):
-        self.base_url = (base_url or os.environ["DOTA_COACH_LLM_BASE_URL"]).rstrip("/")
-        self.api_key = api_key or os.environ["DOTA_COACH_LLM_API_KEY"]
+        self.base_url = (base_url or os.environ.get("DOTA_COACH_LLM_BASE_URL") or "").rstrip("/")
+        self.api_key = api_key or os.environ.get("DOTA_COACH_LLM_API_KEY")
         self.model = model or os.environ.get("DOTA_COACH_LLM_MODEL")
-        if not self.model:
-            raise ValueError("не задана модель: DOTA_COACH_LLM_MODEL или аргумент model")
+        if not self.base_url or not self.api_key or not self.model:
+            raise ValueError(
+                "нужны переменные окружения DOTA_COACH_LLM_BASE_URL, "
+                "DOTA_COACH_LLM_API_KEY, DOTA_COACH_LLM_MODEL"
+            )
         self.cache_dir = cache_dir
         self.timeout = timeout
 

@@ -75,7 +75,6 @@ def _cmd_coach(args: argparse.Namespace) -> int:
         from dota_coach.coach.principles import principles_for
         from dota_coach.coach.progress import compare_focus
         from dota_coach.coach.prompt import build_coach_prompt
-        from dota_coach.leaks import detect_leaks
 
         leaks = detect_leaks(matches, args.account_id)
         focus = _select_focus(leaks)
@@ -89,16 +88,19 @@ def _cmd_coach(args: argparse.Namespace) -> int:
             print(f"--- {msg['role']} ---\n{msg['content']}\n")
         return 0
 
-    from dota_coach.coach.coach import run_coach
-    from dota_coach.coach.llm import OpenAICompatibleLLM
-    from dota_coach.leaks import detect_leaks
+    try:
+        from dota_coach.coach.coach import run_coach
+        from dota_coach.coach.llm import OpenAICompatibleLLM
 
-    brief = run_coach(matches, args.account_id, OpenAICompatibleLLM())
-    leaks = detect_leaks(matches, args.account_id)
-    html = render_coach_html(brief, leaks)
-    Path(args.out).write_text(html, encoding="utf-8")
-    print(f"coach brief over {len(matches)} matches -> {args.out}")
-    return 0
+        brief = run_coach(matches, args.account_id, OpenAICompatibleLLM())
+        leaks = detect_leaks(matches, args.account_id)
+        html = render_coach_html(brief, leaks)
+        Path(args.out).write_text(html, encoding="utf-8")
+        print(f"coach brief over {len(matches)} matches -> {args.out}")
+        return 0
+    except Exception as exc:  # noqa: BLE001 - CLI boundary: surface a clean message
+        print(f"ошибка вызова ЛЛМ-тренера: {exc}")
+        return 1
 
 
 def main(argv: list[str] | None = None) -> int:

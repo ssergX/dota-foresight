@@ -47,3 +47,9 @@ def test_brief_dict_round_trip_preserves_focus_snapshot():
 def test_parse_brief_null_focus_raises():
     with pytest.raises(ValueError):
         parse_brief({"focus_leak_key": None, "drills": []})
+
+
+def test_parse_brief_strips_markdown_fence():
+    raw = '```json\n{"focus_leak_key": "feeding", "drills": []}\n```'
+    b = parse_brief(raw)
+    assert b.focus_leak_key == "feeding"

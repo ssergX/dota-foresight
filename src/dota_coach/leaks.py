@@ -41,7 +41,7 @@ def detect_leaks(matches: list[Match], account_id: int | None) -> list[Leak]:
         leaks.append(Leak(
             key="farm_below_bracket",
             title="Фарм ниже бракета",
-            magnitude=f"медиана GPM в p{int(median(gpms) * 100)}",
+            magnitude=f"медиана GPM в p{round(median(gpms) * 100)}",
             example_matches=[r["match_id"] for r in worst],
             confidence=Confidence.HIGH,
             metric="gpm_pct",

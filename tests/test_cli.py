@@ -15,7 +15,9 @@ def test_build_match_report_end_to_end():
     assert "Ключевые моменты" in html
 
 
-def test_coach_dry_run_prints_prompt_without_llm(monkeypatch, capsys):
+def test_coach_dry_run_prints_prompt_without_llm(tmp_path, monkeypatch, capsys):
+    monkeypatch.chdir(tmp_path)
+
     from dota_coach.cli import main
     from dota_coach.models import Match, PlayerMatch
 

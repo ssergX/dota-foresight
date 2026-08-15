@@ -13,6 +13,12 @@ _METRIC_RU = {
     "obs_per_game": "варды за игру",
 }
 
+_LEAK_RU = {
+    "feeding": "смерти",
+    "farm_below_bracket": "фарм",
+    "low_warding": "варды",
+}
+
 
 @dataclass
 class ProgressNote:
@@ -32,10 +38,12 @@ def _find_leak(leaks: list[Leak], key: str) -> Leak | None:
 
 def _fmt(metric: str, value: float) -> str:
     if metric == "gpm_pct":
-        return f"p{int(value * 100)}"
+        return f"p{round(value * 100)}"
     return f"{value:.1f}"
 
 
+# Отслеживает только фокус-лик ИЗ ПРЕДЫДУЩЕГО брифа (подотчётность по одному лику
+# намеренно; лик, который перестал быть фокусом, не отслеживается, пока снова не станет фокусом).
 def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak]) -> ProgressNote:
     if prev_brief is None or not prev_brief.focus_leak_key:
         return ProgressNote("no_history", "", None, None,
@@ -50,7 +58,7 @@ def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak]) -> P
     curr_leak = _find_leak(current_leaks, key)
     if curr_leak is None:
         return ProgressNote("resolved", metric, prev_value, None,
-                            f"Лик «{key}» больше не срабатывает — прогресс.")
+                            f"Лик «{_LEAK_RU.get(key, key)}» больше не срабатывает — прогресс.")
 
     curr_value = curr_leak.value
     delta = curr_value - prev_value

@@ -25,8 +25,20 @@ class CoachBrief:
     focus_direction: str = "lower_is_better"
 
 
+def _strip_code_fence(text: str) -> str:
+    s = text.strip()
+    if s.startswith("```"):
+        # drop the opening fence line (``` or ```json) and a trailing ``` if present
+        lines = s.splitlines()
+        lines = lines[1:]
+        if lines and lines[-1].strip().startswith("```"):
+            lines = lines[:-1]
+        s = "\n".join(lines).strip()
+    return s
+
+
 def parse_brief(raw: str | dict) -> CoachBrief:
-    data = json.loads(raw) if isinstance(raw, str) else raw
+    data = json.loads(_strip_code_fence(raw)) if isinstance(raw, str) else raw
     if not isinstance(data, dict):
         raise ValueError("coach brief должен быть JSON-объектом")
     if data.get("focus_leak_key") is None:
