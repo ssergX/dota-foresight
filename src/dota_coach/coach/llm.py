@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
 from pathlib import Path
 from typing import Protocol
 
@@ -75,3 +76,44 @@ class OpenAICompatibleLLM:
         )
         resp.raise_for_status()
         return resp.json()["choices"][0]["message"]["content"]
+
+
+_CLAUDE_DISALLOWED_TOOLS = "Bash Edit Write Read Glob Grep WebFetch WebSearch NotebookEdit Task"
+
+
+def _default_runner(argv: list[str], stdin_text: str, timeout: float) -> tuple[int, str, str]:
+    """Реальный запуск claude (без юнит-тестов, как сетевой путь)."""
+    proc = subprocess.run(
+        argv, input=stdin_text, capture_output=True, text=True,
+        encoding="utf-8", timeout=timeout,
+    )
+    return proc.returncode, proc.stdout, proc.stderr
+
+
+class ClaudeCliLLM:
+    """Провайдер через Claude Code CLI (claude -p), в счёт подписки. Раннер инъектируется."""
+
+    def __init__(self, claude_bin: str | None = None,
+                 cache_dir: Path = Path("cache") / "coach_llm",
+                 timeout: float = 120.0, runner=None):
+        self.claude_bin = claude_bin or os.environ.get("DOTA_COACH_CLAUDE_BIN") or "claude"
+        self.cache_dir = cache_dir
+        self.timeout = timeout
+        self._run = runner or _default_runner
+
+    def complete(self, messages: list[dict]) -> str:
+        return _cached(self.cache_dir, messages, lambda: self._invoke(messages))
+
+    def _invoke(self, messages: list[dict]) -> str:
+        system = "\n".join(m["content"] for m in messages if m["role"] == "system")
+        user = "\n".join(m["content"] for m in messages if m["role"] == "user")
+        prompt = f"{system}\n\n{user}" if system else user
+
+        argv = [
+            self.claude_bin, "-p", "--output-format", "json",
+            "--disallowed-tools", _CLAUDE_DISALLOWED_TOOLS,
+        ]
+        rc, out, err = self._run(argv, prompt, self.timeout)
+        envelope = json.loads(out)
+        result = envelope.get("result")
+        return str(result)

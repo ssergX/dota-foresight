@@ -36,3 +36,47 @@ def test_cached_produces_once_then_reads_from_disk(tmp_path):
     assert first == "RESULT"
     assert second == "RESULT"
     assert len(calls) == 1  # второй вызов читает файл, produce не зовётся
+
+
+class _FakeRunner:
+    def __init__(self, rc=0, stdout="", stderr=""):
+        self.rc, self.stdout, self.stderr = rc, stdout, stderr
+        self.calls = []
+
+    def __call__(self, argv, stdin_text, timeout):
+        self.calls.append((argv, stdin_text, timeout))
+        return self.rc, self.stdout, self.stderr
+
+
+def test_claude_cli_maps_messages_and_returns_result(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    envelope = json.dumps(
+        {"type": "result", "is_error": False, "result": '{"focus_leak_key":"feeding"}'}
+    )
+    runner = _FakeRunner(rc=0, stdout=envelope)
+    llm = ClaudeCliLLM(claude_bin="claude", cache_dir=tmp_path, runner=runner)
+
+    out = llm.complete(
+        [{"role": "system", "content": "SYS"}, {"role": "user", "content": "USR"}]
+    )
+    assert out == '{"focus_leak_key":"feeding"}'
+
+    argv, stdin_text, timeout = runner.calls[0]
+    assert argv[0] == "claude"
+    assert "-p" in argv
+    assert "--output-format" in argv and "json" in argv
+    assert "--disallowed-tools" in argv
+    assert stdin_text == "SYS\n\nUSR"
+
+
+def test_claude_cli_caches_second_call(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    runner = _FakeRunner(rc=0, stdout=json.dumps({"is_error": False, "result": "R"}))
+    msgs = [{"role": "user", "content": "hi"}]
+    llm = ClaudeCliLLM(cache_dir=tmp_path, runner=runner)
+
+    llm.complete(msgs)
+    llm.complete(msgs)
+    assert len(runner.calls) == 1  # второй раз — из кеша
