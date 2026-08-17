@@ -18,6 +18,17 @@ def _messages_hash(messages: list[dict]) -> str:
     return hashlib.sha256(blob.encode("utf-8")).hexdigest()
 
 
+def _cached(cache_dir: Path, messages: list[dict], produce) -> str:
+    """Дисковый кеш ответа ЛЛМ по хешу входных сообщений."""
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    path = cache_dir / f"{_messages_hash(messages)}.json"
+    if path.exists():
+        return path.read_text(encoding="utf-8")
+    content = produce()
+    path.write_text(content, encoding="utf-8")
+    return content
+
+
 class FakeLLM:
     """Тестовый двойник: отдаёт заранее заданный JSON, пишет вызовы."""
 
@@ -48,10 +59,9 @@ class OpenAICompatibleLLM:
         self.timeout = timeout
 
     def complete(self, messages: list[dict]) -> str:
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        cached = self.cache_dir / f"{_messages_hash(messages)}.json"
-        if cached.exists():
-            return cached.read_text(encoding="utf-8")
+        return _cached(self.cache_dir, messages, lambda: self._post(messages))
+
+    def _post(self, messages: list[dict]) -> str:
         resp = requests.post(
             f"{self.base_url}/chat/completions",
             headers={"Authorization": f"Bearer {self.api_key}"},
@@ -64,6 +74,4 @@ class OpenAICompatibleLLM:
             timeout=self.timeout,
         )
         resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
-        cached.write_text(content, encoding="utf-8")
-        return content
+        return resp.json()["choices"][0]["message"]["content"]
