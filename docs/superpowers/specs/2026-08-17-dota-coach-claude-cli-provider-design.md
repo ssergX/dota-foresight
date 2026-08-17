@@ -48,7 +48,8 @@ system = "\n".join(m["content"] for m in messages if m["role"] == "system")
 user   = "\n".join(m["content"] for m in messages if m["role"] == "user")
 prompt = f"{system}\n\n{user}" if system else user
 
-argv = [self.claude_bin, "-p", "--output-format", "json", <флаг-глушения-тулов>]
+argv = [self.claude_bin, "-p", "--output-format", "json",
+        "--disallowed-tools", "Bash Edit Write Read Glob Grep WebFetch WebSearch NotebookEdit Task"]
 rc, out, err = self._run(argv, prompt, self.timeout)
 if rc != 0:
     raise RuntimeError(f"claude -p завершился с кодом {rc}: {err.strip()[:500]}")
@@ -60,10 +61,9 @@ if not result or not str(result).strip():
     raise RuntimeError("claude -p вернул пустой result")
 return str(result)                         # parse_brief снимет ```-обёртку сам
 ```
-- **Глушение тулов**: в argv добавляется флаг, запрещающий Claude Code лезть в инструменты
-  (Read/Bash и т.п.) — нам нужен только текст. Точное имя флага (`--disallowedTools "*"`
-  или актуальный эквивалент) **сверяется смоком с установленной версией claude на этапе
-  реализации** (см. «Открытые сверки»).
+- **Глушение тулов**: `--disallowed-tools "Bash Edit Write Read Glob Grep WebFetch WebSearch
+  NotebookEdit Task"` — Claude Code не лезет в инструменты, нам нужен только текст.
+  (Сверено смоком, см. «Сверено смоком».)
 - **`_default_runner`**: `subprocess.run(argv, input=prompt, capture_output=True, text=True,
   encoding="utf-8", timeout=timeout)` → `(proc.returncode, proc.stdout, proc.stderr)`.
 
@@ -145,14 +145,25 @@ detect_leaks → build_coach_prompt (system+user) → make_llm(provider).complet
    (`result`, `is_error`) и рабочий флаг глушения тулов на установленной версии.
 2. `dota-coach coach --account-id <ID>` с залогиненным подпиской `claude` — живой бриф.
 
-## Открытые сверки (на этапе реализации, до/во время кода)
+## Сверено смоком (2026-08-17, claude в `C:\Users\user\.local\bin\claude.exe`)
 
-- Точная структура конверта `claude -p --output-format json` (имя поля результата, наличие
-  `is_error`) — смоком.
-- Точный флаг запрета инструментов (`--disallowedTools` vs эквивалент) — смоком.
-- Читает ли `claude -p` промпт из stdin без позиционного аргумента, или нужен `-p -`
-  / пустой позиционный — смоком; если нет, промпт уходит `-p <combined>` (тогда учесть
-  Windows-квотинг — передать через временный механизм, не argv напрямую).
+`printf '...' | claude -p --output-format json --disallowed-tools "..."` вернул:
+```json
+{"type":"result","subtype":"success","is_error":false,"result":"пинг",
+ "total_cost_usd":0.22,"session_id":"...","usage":{...}}
+```
+- **Конверт**: поле результата — `result` (строка); флаг ошибки — `is_error` (bool). ✓
+- **stdin**: `claude -p` читает промпт из пайпа без позиционного аргумента. ✓
+- **Флаг глушения тулов**: `--disallowed-tools "<список>"` принимается. ✓
+- Кириллица в промпте и ответе проходит. ✓
+
+**Caveat по стоимости/контексту:** смок-вызов создал ~22.7k cache-creation токенов —
+claude подгрузил `CLAUDE.md`/хуки/контекст текущей директории. Для дешевизны
+`ClaudeCliLLM` стоит звать так, чтобы не тянуть тяжёлый проектный контекст: запускать
+из нейтрального cwd либо у dota-coach нет большого `CLAUDE.md` (лёгкий контекст).
+**НЕ использовать `--bare`**: он форсит auth только через `ANTHROPIC_API_KEY`
+(OAuth/keychain не читаются) — это ломает счёт-в-подписку, ради которого всё и делается.
+Опционально в плане: `--model` для пина модели (не обязателен, дефолт ок).
 
 ## Вне скоупа (YAGNI)
 
