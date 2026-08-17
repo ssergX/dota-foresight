@@ -80,3 +80,41 @@ def test_claude_cli_caches_second_call(tmp_path):
     llm.complete(msgs)
     llm.complete(msgs)
     assert len(runner.calls) == 1  # второй раз — из кеша
+
+
+def test_claude_cli_raises_on_nonzero_rc(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    runner = _FakeRunner(rc=1, stdout="", stderr="boom")
+    llm = ClaudeCliLLM(cache_dir=tmp_path, runner=runner)
+    with pytest.raises(RuntimeError, match="boom"):
+        llm.complete([{"role": "user", "content": "x"}])
+
+
+def test_claude_cli_raises_on_is_error(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    runner = _FakeRunner(rc=0, stdout=json.dumps({"is_error": True, "result": "denied"}))
+    llm = ClaudeCliLLM(cache_dir=tmp_path, runner=runner)
+    with pytest.raises(RuntimeError, match="denied"):
+        llm.complete([{"role": "user", "content": "x"}])
+
+
+def test_claude_cli_raises_on_empty_result(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    runner = _FakeRunner(rc=0, stdout=json.dumps({"is_error": False, "result": "  "}))
+    llm = ClaudeCliLLM(cache_dir=tmp_path, runner=runner)
+    with pytest.raises(RuntimeError):
+        llm.complete([{"role": "user", "content": "x"}])
+
+
+def test_claude_cli_raises_clear_error_when_binary_missing(tmp_path):
+    from dota_coach.coach.llm import ClaudeCliLLM
+
+    def missing_runner(argv, stdin_text, timeout):
+        raise FileNotFoundError(argv[0])
+
+    llm = ClaudeCliLLM(cache_dir=tmp_path, runner=missing_runner)
+    with pytest.raises(RuntimeError, match="claude не найден"):
+        llm.complete([{"role": "user", "content": "x"}])

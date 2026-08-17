@@ -113,7 +113,22 @@ class ClaudeCliLLM:
             self.claude_bin, "-p", "--output-format", "json",
             "--disallowed-tools", _CLAUDE_DISALLOWED_TOOLS,
         ]
-        rc, out, err = self._run(argv, prompt, self.timeout)
+        try:
+            rc, out, err = self._run(argv, prompt, self.timeout)
+        except FileNotFoundError as exc:
+            raise RuntimeError(
+                f"claude не найден ({self.claude_bin!r}): поставь @anthropic-ai/claude-code "
+                "и залогинься подпиской, либо используй --provider openai"
+            ) from exc
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(f"claude -p не ответил за {self.timeout}s") from exc
+
+        if rc != 0:
+            raise RuntimeError(f"claude -p завершился с кодом {rc}: {err.strip()[:500]}")
         envelope = json.loads(out)
+        if envelope.get("is_error"):
+            raise RuntimeError(f"claude вернул ошибку: {str(envelope.get('result', ''))[:500]}")
         result = envelope.get("result")
+        if not result or not str(result).strip():
+            raise RuntimeError("claude -p вернул пустой result")
         return str(result)
