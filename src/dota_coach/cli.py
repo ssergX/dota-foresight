@@ -90,9 +90,9 @@ def _cmd_coach(args: argparse.Namespace) -> int:
 
     try:
         from dota_coach.coach.coach import run_coach
-        from dota_coach.coach.llm import OpenAICompatibleLLM
+        from dota_coach.coach.llm import make_llm
 
-        brief = run_coach(matches, args.account_id, OpenAICompatibleLLM())
+        brief = run_coach(matches, args.account_id, make_llm(args.provider))
         leaks = detect_leaks(matches, args.account_id)
         html = render_coach_html(brief, leaks)
         Path(args.out).write_text(html, encoding="utf-8")
@@ -103,7 +103,7 @@ def _cmd_coach(args: argparse.Namespace) -> int:
         return 1
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dota-coach")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
@@ -126,7 +126,14 @@ def main(argv: list[str] | None = None) -> int:
     c.add_argument("--n", type=int, default=20)
     c.add_argument("--out", default="coach.html")
     c.add_argument("--dry-run", action="store_true", dest="dry_run")
+    c.add_argument(
+        "--provider", default=None,
+        help="claude|openai; по умолчанию claude (env DOTA_COACH_LLM_PROVIDER)",
+    )
     c.set_defaults(func=_cmd_coach)
+    return parser
 
-    args = parser.parse_args(argv)
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
     return args.func(args)
