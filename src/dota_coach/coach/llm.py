@@ -132,3 +132,13 @@ class ClaudeCliLLM:
         if not result or not str(result).strip():
             raise RuntimeError("claude -p вернул пустой result")
         return str(result)
+
+
+def make_llm(provider: str | None = None) -> CoachLLM:
+    """Выбор провайдера ЛЛМ: аргумент → env DOTA_COACH_LLM_PROVIDER → дефолт claude."""
+    provider = (provider or os.environ.get("DOTA_COACH_LLM_PROVIDER") or "claude").lower()
+    if provider == "claude":
+        return ClaudeCliLLM()
+    if provider in ("openai", "glm"):
+        return OpenAICompatibleLLM()
+    raise ValueError(f"неизвестный провайдер ЛЛМ: {provider!r} (ожидалось claude|openai)")

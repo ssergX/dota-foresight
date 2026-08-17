@@ -118,3 +118,37 @@ def test_claude_cli_raises_clear_error_when_binary_missing(tmp_path):
     llm = ClaudeCliLLM(cache_dir=tmp_path, runner=missing_runner)
     with pytest.raises(RuntimeError, match="claude не найден"):
         llm.complete([{"role": "user", "content": "x"}])
+
+
+def test_make_llm_defaults_to_claude(monkeypatch):
+    from dota_coach.coach.llm import ClaudeCliLLM, make_llm
+
+    monkeypatch.delenv("DOTA_COACH_LLM_PROVIDER", raising=False)
+    assert isinstance(make_llm(), ClaudeCliLLM)
+
+
+def test_make_llm_openai_when_selected(monkeypatch):
+    from dota_coach.coach.llm import OpenAICompatibleLLM, make_llm
+
+    monkeypatch.setenv("DOTA_COACH_LLM_BASE_URL", "http://x")
+    monkeypatch.setenv("DOTA_COACH_LLM_API_KEY", "k")
+    monkeypatch.setenv("DOTA_COACH_LLM_MODEL", "m")
+    assert isinstance(make_llm("openai"), OpenAICompatibleLLM)
+
+
+def test_make_llm_reads_env_default(monkeypatch):
+    from dota_coach.coach.llm import OpenAICompatibleLLM, make_llm
+
+    monkeypatch.setenv("DOTA_COACH_LLM_PROVIDER", "openai")
+    monkeypatch.setenv("DOTA_COACH_LLM_BASE_URL", "http://x")
+    monkeypatch.setenv("DOTA_COACH_LLM_API_KEY", "k")
+    monkeypatch.setenv("DOTA_COACH_LLM_MODEL", "m")
+    assert isinstance(make_llm(), OpenAICompatibleLLM)
+
+
+def test_make_llm_unknown_provider_raises(monkeypatch):
+    from dota_coach.coach.llm import make_llm
+
+    monkeypatch.delenv("DOTA_COACH_LLM_PROVIDER", raising=False)
+    with pytest.raises(ValueError):
+        make_llm("gemini")
