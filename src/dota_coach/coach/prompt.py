@@ -55,8 +55,11 @@ def build_coach_prompt(leaks: list[Leak], progress: ProgressNote | None,
                        focus_key: str) -> list[dict]:
     focus = next((l for l in leaks if l.key == focus_key), None)
     family = focus.family if focus else ""
-    confirming = [l for l in leaks if l.family == family and l.key != focus_key]
-    conf_block = ("\n".join(f"- {l.title}: {l.metric}={l.value:.3f}" for l in confirming)
+    # подтверждающие детали — той же семьи И той же роли, что фокус (иначе чужая роль
+    # затесалась бы в «подтверждения» и ввела ЛЛМ в заблуждение)
+    confirming = [l for l in leaks if l.family == family and l.key != focus_key
+                  and (focus is None or l.role == focus.role)]
+    conf_block = ("\n".join(f"- {_role_ru(l.role)} {l.title}: {l.metric}={l.value:.3f}" for l in confirming)
                   or "(нет)")
     role_line = _role_ru(focus.role) if focus else "роль не определена"
     user = (
