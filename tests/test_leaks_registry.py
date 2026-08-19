@@ -18,10 +18,15 @@ def test_detector_registers_and_applicable_filters_by_role():
     def _d(rows, role, th):
         return None
 
-    assert len(DETECTORS) == before + 1
-    keys4 = {d.key for d in applicable(4)}
-    keys3 = {d.key for d in applicable(3)}
-    assert "t_only_pos4" in keys4 and "t_only_pos4" not in keys3
+    try:
+        assert len(DETECTORS) == before + 1
+        keys4 = {d.key for d in applicable(4)}
+        keys3 = {d.key for d in applicable(3)}
+        assert "t_only_pos4" in keys4 and "t_only_pos4" not in keys3
+    finally:
+        # DETECTORS — глобальный мутируемый список; убираем тестовый детектор,
+        # иначе он утекает в другие тесты (например, проверку полноты principles.md).
+        DETECTORS.pop()
 
 
 def test_filter_rows_excludes_missing_and_never_zeros():

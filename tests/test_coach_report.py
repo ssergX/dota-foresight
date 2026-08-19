@@ -53,3 +53,16 @@ def test_coach_report_uses_progress_arg_when_no_progress_note():
                         curr_value=3.0, text="варды p1 → p3 — прогресс")
     html = render_coach_html(brief, [_leak()], note)
     assert "варды p1 → p3 — прогресс" in html
+
+
+def test_render_shows_also_visible_and_coverage():
+    brief = CoachBrief(focus_leak_key="feeding", headline="Много смертей",
+                       diagnosis="d", why_it_costs="w")
+    focus = Leak(key="feeding", title="Смерти", magnitude="20", family="deaths",
+                 sample_size=8, considered=11)
+    also = [Leak(key="low_obs", title="Мало обсов", magnitude="1 обс", family="vision",
+                 sample_size=6, considered=11)]
+    html = render_coach_html(brief, [focus, *also], also_visible=also)
+    assert "тоже видно" in html.lower()
+    assert "Мало обсов" in html
+    assert "8 из 11" in html   # строка покрытия по лику-фокусу (правило деградации №5 спеки)

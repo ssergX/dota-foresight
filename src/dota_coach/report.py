@@ -74,11 +74,13 @@ def _coach_drill_row(text: str, metric_ref: str) -> str:
 
 
 def _coach_leak_row(leak: Leak) -> str:
-    return (f"<li><b>{_html.escape(leak.title)}</b>: {_html.escape(leak.magnitude)}</li>")
+    cov = (f" <span class='meta'>(данных: {leak.sample_size} из {leak.considered} матчей)</span>"
+           if leak.considered else "")
+    return f"<li><b>{_html.escape(leak.title)}</b>: {_html.escape(leak.magnitude)}{cov}</li>"
 
 
-def render_coach_html(brief: CoachBrief, leaks: list[Leak],
-                      progress: ProgressNote | None = None) -> str:
+def render_coach_html(brief: CoachBrief, leaks: list[Leak], progress: ProgressNote | None = None,
+                      also_visible: list[Leak] | None = None) -> str:
     headline = _html.escape(brief.headline)
     if not brief.focus_leak_key:
         body = f"<h1>{headline}</h1>"
@@ -89,6 +91,9 @@ def render_coach_html(brief: CoachBrief, leaks: list[Leak],
         note = brief.progress_note or (progress.text if progress else None)
         progress_block = (f"<h2>Прогресс</h2><p class='progress'>{_html.escape(note)}</p>"
                           if note else "")
+        also = also_visible or []
+        also_block = ("<h2>Тоже видно</h2><ul>"
+                      + "\n".join(_coach_leak_row(l) for l in also) + "</ul>") if also else ""
         leaks_block = "\n".join(_coach_leak_row(l) for l in leaks)
         body = (
             f"<h1>{headline}</h1>"
@@ -96,6 +101,7 @@ def render_coach_html(brief: CoachBrief, leaks: list[Leak],
             f"<h2>Почему это топит</h2><p>{why}</p>"
             f"<h2>Дриллы на следующие игры</h2><ul>{drills}</ul>"
             f"{progress_block}"
+            f"{also_block}"
             f"<h2>Все системные лики</h2><ul>{leaks_block}</ul>"
         )
 

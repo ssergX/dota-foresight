@@ -91,10 +91,12 @@ def _cmd_coach(args: argparse.Namespace) -> int:
     try:
         from dota_coach.coach.coach import run_coach
         from dota_coach.coach.llm import make_llm
+        from dota_coach.leaks.severity import rank
 
         brief = run_coach(matches, args.account_id, make_llm(args.provider))
         leaks = detect_leaks(matches, args.account_id)
-        html = render_coach_html(brief, leaks)
+        _focus, also = rank(list(leaks))
+        html = render_coach_html(brief, leaks, also_visible=also)
         Path(args.out).write_text(html, encoding="utf-8")
         print(f"coach brief over {len(matches)} matches -> {args.out}")
         return 0
