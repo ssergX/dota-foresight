@@ -45,6 +45,35 @@ class PlayerMatch:
     obs_log: list[dict] = field(default_factory=list)
     sen_log: list[dict] = field(default_factory=list)
     benchmarks: dict = field(default_factory=dict)
+    # --- ролевые сигналы ---
+    position_est: int | None = None      # 1..5, парс-зависимое
+    lane_role: int | None = None         # 1 safe / 2 mid / 3 off / 4 jungle
+    is_roaming: bool = False
+    lane: int | None = None
+    # --- всегда-присутствующие базовые числа (есть и у непропарсенных) ---
+    denies: int = 0
+    net_worth: int = 0
+    level: int = 0
+    hero_damage: int = 0
+    tower_damage: int = 0
+    killed_by: dict = field(default_factory=dict)
+    # --- парс-зависимые (None = нет данных, requires исключит матч; НИКОГДА не 0) ---
+    lane_efficiency_pct: int | None = None
+    life_state_dead: int | None = None
+    teamfight_participation: float | None = None
+    stuns: float | None = None
+    obs_placed: int | None = None
+    sen_placed: int | None = None
+    camps_stacked: int | None = None
+    neutral_kills: int | None = None
+    rune_pickups: int | None = None
+    observer_kills: int | None = None
+    sentry_uses: int | None = None
+    towers_killed: int | None = None
+    roshans_killed: int | None = None
+    dn_t: list[int] = field(default_factory=list)
+    obs_left_log: list[dict] = field(default_factory=list)
+    buyback_log: list[dict] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -117,6 +146,13 @@ class Leak:
     value: float = 0.0
     threshold: float = 0.0
     direction: str = "lower_is_better"
+    role: int | None = None
+    source: str = "manual"       # bench | manual | personal
+    sample_size: int = 0         # N: матчей после requires-фильтра
+    considered: int = 0          # M: матчей в роли до фильтра (для строки покрытия)
+    severity: float = 0.0
+    phase: str = ""              # laning|economy|deaths|fights|vision|objectives
+    family: str = ""
 
 
 @dataclass(frozen=True)
