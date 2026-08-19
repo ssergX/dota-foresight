@@ -1,83 +1,37 @@
 from __future__ import annotations
 
-from statistics import mean, median
+from dota_coach.leaks import detectors as _detectors  # noqa: F401  (регистрация)
+from dota_coach.leaks.registry import applicable, filter_rows
+from dota_coach.leaks.rows import build_rows
+from dota_coach.leaks.roles import segment_by_role
+from dota_coach.leaks.severity import rank
+from dota_coach.leaks.thresholds import Thresholds
+from dota_coach.models import Leak, Match
 
-from dota_coach.benchmarks import player_benchmarks
-from dota_coach.models import Confidence, Leak, Match
-
-_FARM_PCT = 0.4
-_DEATHS_MAX = 8.0
-_OBS_MIN = 4.0
-
-
-def _gpm_pct(match: Match, account_id: int | None) -> float | None:
-    for b in player_benchmarks(match, account_id):
-        if b.metric == "gold_per_min":
-            return b.pct
-    return None
+_MIN_GAMES_PER_ROLE = 5
+_MIN_SAMPLE_PER_DETECTOR = 5
 
 
 def detect_leaks(matches: list[Match], account_id: int | None) -> list[Leak]:
-    rows = []
-    for m in matches:
-        me = m.player_by_account(account_id)
-        if me is None:
+    rows = build_rows(matches, account_id)
+    th = Thresholds()
+    found: list[Leak] = []
+    for role, role_rows in segment_by_role(rows).items():
+        if len(role_rows) < _MIN_GAMES_PER_ROLE:
             continue
-        rows.append({
-            "match_id": m.match_id,
-            "gpm_pct": _gpm_pct(m, account_id),
-            "deaths": me.deaths,
-            "obs": len(me.obs_log),
-        })
-    if not rows:
+        for spec in applicable(role):
+            usable = filter_rows(role_rows, spec.requires)
+            if len(usable) < _MIN_SAMPLE_PER_DETECTOR:
+                continue
+            leak = spec.fn(usable, role, th)
+            if leak is not None:
+                leak.considered = len(role_rows)   # M: матчей в роли до requires (строка покрытия)
+                found.append(leak)
+    focus, also = rank(found)
+    if focus is None:
         return []
-
-    leaks: list[Leak] = []
-
-    gpms = [r["gpm_pct"] for r in rows if r["gpm_pct"] is not None]
-    if gpms and median(gpms) < _FARM_PCT:
-        worst = sorted((r for r in rows if r["gpm_pct"] is not None),
-                       key=lambda r: r["gpm_pct"])[:3]
-        leaks.append(Leak(
-            key="farm_below_bracket",
-            title="Фарм ниже бракета",
-            magnitude=f"медиана GPM в p{round(median(gpms) * 100)}",
-            example_matches=[r["match_id"] for r in worst],
-            confidence=Confidence.HIGH,
-            metric="gpm_pct",
-            value=float(median(gpms)),
-            threshold=_FARM_PCT,
-            direction="higher_is_better",
-        ))
-
-    avg_deaths = mean(r["deaths"] for r in rows)
-    if avg_deaths > _DEATHS_MAX:
-        worst = sorted(rows, key=lambda r: r["deaths"], reverse=True)[:3]
-        leaks.append(Leak(
-            key="feeding",
-            title="Слишком много смертей",
-            magnitude=f"в среднем {avg_deaths:.1f} смертей за игру (порог {_DEATHS_MAX:.0f})",
-            example_matches=[r["match_id"] for r in worst],
-            confidence=Confidence.HIGH,
-            metric="deaths_per_game",
-            value=float(avg_deaths),
-            threshold=_DEATHS_MAX,
-            direction="lower_is_better",
-        ))
-
-    avg_obs = mean(r["obs"] for r in rows)
-    if avg_obs < _OBS_MIN:
-        worst = sorted(rows, key=lambda r: r["obs"])[:3]
-        leaks.append(Leak(
-            key="low_warding",
-            title="Мало вардов",
-            magnitude=f"в среднем {avg_obs:.1f} обс-вардов за игру (порог {_OBS_MIN:.0f})",
-            example_matches=[r["match_id"] for r in worst],
-            confidence=Confidence.HIGH,
-            metric="obs_per_game",
-            value=float(avg_obs),
-            threshold=_OBS_MIN,
-            direction="higher_is_better",
-        ))
-
-    return leaks
+    # порядок: фокус, затем «тоже видно», затем прочие члены семей (severity desc)
+    ordered = [focus, *also]
+    rest = sorted((l for l in found if l is not focus and l not in also),
+                  key=lambda l: (-l.severity, l.key))
+    return [*ordered, *rest]
