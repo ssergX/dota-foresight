@@ -1,10 +1,16 @@
 import json
 from pathlib import Path
 
-from dota_coach.cli import build_match_report
+from dota_coach.cli import build_match_report, build_parser
 from dota_coach.ingest.normalize import normalize
 
 FIXTURE = Path(__file__).parent / "fixtures" / "opendota_match_sample.json"
+
+
+def test_coach_and_leaks_default_n_is_50():
+    p = build_parser()
+    assert p.parse_args(["coach", "--account-id", "1"]).n == 50
+    assert p.parse_args(["leaks", "--account-id", "1"]).n == 50
 
 
 def test_build_match_report_end_to_end():

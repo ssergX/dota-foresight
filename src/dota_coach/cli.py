@@ -119,13 +119,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     l = sub.add_parser("leaks", help="системные лики по последним матчам")
     l.add_argument("--account-id", type=int, required=True, dest="account_id")
-    l.add_argument("--n", type=int, default=20)
+    l.add_argument("--n", type=int, default=50)
     l.add_argument("--out", default="leaks.html")
     l.set_defaults(func=_cmd_leaks)
 
     c = sub.add_parser("coach", help="системный ЛЛМ-разбор по серии матчей")
     c.add_argument("--account-id", type=int, required=True, dest="account_id")
-    c.add_argument("--n", type=int, default=20)
+    c.add_argument("--n", type=int, default=50)
     c.add_argument("--out", default="coach.html")
     c.add_argument("--dry-run", action="store_true", dest="dry_run")
     c.add_argument(
