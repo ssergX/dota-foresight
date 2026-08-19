@@ -49,3 +49,28 @@ def test_prompt_includes_prior_progress():
     progress = compare_focus(prior, _leaks())   # 14.0 -> 11.0, lower_is_better -> improved
     msgs = build_coach_prompt(_leaks(), progress, "p", prior, "feeding")
     assert "прогресс" in msgs[1]["content"]
+
+
+def test_prompt_includes_role_and_source():
+    leak = Leak(key="low_obs", title="Мало обсов", magnitude="1 обс", metric="obs_per_game",
+                value=1.0, threshold=6.0, direction="higher_is_better", role=5, source="manual",
+                sample_size=8, family="vision")
+    msgs = build_coach_prompt([leak], None, "принципы", None, "low_obs")
+    user = msgs[1]["content"]
+    assert "pos5" in user or "роль" in user.lower()
+    assert "разумной планк" in user.lower() or "manual" in user  # источник порога словами
+
+
+def test_prompt_never_leaks_outcome():
+    leak = Leak(key="feeding", title="Смерти", magnitude="20", metric="deaths_per_game",
+                value=20.0, threshold=8.0, direction="lower_is_better", role=4, source="manual",
+                sample_size=8, family="deaths")
+    msgs = build_coach_prompt([leak], None, "p", None, "feeding")
+    # системный промпт НАРОЧНО называет запрещённое («Побед/поражений тебе не дают»),
+    # поэтому русские слова исхода проверяем только в user-сообщении (данные), а radiant_* — везде.
+    user = msgs[1]["content"].lower()
+    for banned in ("победа", "поражени", "выигр", "проигр"):
+        assert banned not in user
+    whole = "".join(m["content"] for m in msgs).lower()
+    for banned in ("radiant_win", "radiant_score", "dire_score"):
+        assert banned not in whole

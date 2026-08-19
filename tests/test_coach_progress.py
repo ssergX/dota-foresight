@@ -43,7 +43,7 @@ def test_gpm_improved_higher_is_better():
 
 
 def test_resolved_when_leak_absent():
-    prior = _prior("low_warding", "obs_per_game", 1.0, "higher_is_better")
+    prior = _prior("low_obs", "obs_per_game", 1.0, "higher_is_better")
     note = compare_focus(prior, [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")])
     assert note.status == "resolved"
 

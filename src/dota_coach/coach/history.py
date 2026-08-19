@@ -5,6 +5,8 @@ from pathlib import Path
 
 from dota_coach.coach.brief import CoachBrief, brief_to_dict, parse_brief
 
+_LEGACY_KEY_MAP = {"low_warding": "low_obs"}
+
 
 def _history_path(account_id: int | None, cache_dir: Path) -> Path:
     return cache_dir / f"coach_history_{account_id}.json"
@@ -15,7 +17,13 @@ def load_history(account_id: int | None, cache_dir: Path = Path("cache")) -> lis
     if not path.exists():
         return []
     data = json.loads(path.read_text(encoding="utf-8"))
-    return [parse_brief(item) for item in data]
+    briefs = [parse_brief(item) for item in data]
+    for b in briefs:
+        if b.focus_leak_key in _LEGACY_KEY_MAP:
+            b.focus_leak_key = _LEGACY_KEY_MAP[b.focus_leak_key]
+            # старое значение считалось по всей серии без роли -> несравнимо с новым ролевым:
+            b.baseline_reset = True
+    return briefs
 
 
 def save_brief(account_id: int | None, brief: CoachBrief, cache_dir: Path = Path("cache")) -> None:

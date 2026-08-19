@@ -11,22 +11,10 @@ from dota_coach.coach.prompt import build_coach_prompt
 from dota_coach.leaks import detect_leaks
 from dota_coach.models import Leak, Match
 
-_FOCUS_PRIORITY = ["feeding", "farm_below_bracket", "low_warding"]
-
 
 def _select_focus(leaks: list[Leak]) -> Leak | None:
-    if not leaks:
-        return None
-
-    def deviation(leak: Leak) -> float:
-        if not leak.threshold:
-            return abs(leak.value)
-        return abs(leak.value - leak.threshold) / abs(leak.threshold)
-
-    def priority(leak: Leak) -> int:
-        return _FOCUS_PRIORITY.index(leak.key) if leak.key in _FOCUS_PRIORITY else len(_FOCUS_PRIORITY)
-
-    return sorted(leaks, key=lambda leak: (-deviation(leak), priority(leak)))[0]
+    # detect_leaks уже возвращает список, ранжированный по severity (фокус первым).
+    return leaks[0] if leaks else None
 
 
 def run_coach(matches: list[Match], account_id: int | None, llm: CoachLLM,
@@ -35,6 +23,11 @@ def run_coach(matches: list[Match], account_id: int | None, llm: CoachLLM,
     match_ids = [m.match_id for m in matches]
     prior = latest_brief(account_id, cache_dir)
     progress = compare_focus(prior, leaks)
+    if prior is not None and getattr(prior, "baseline_reset", False):
+        from dota_coach.coach.progress import ProgressNote
+
+        progress = ProgressNote("baseline_reset", "obs_per_game", None, None,
+                                "Метрика вардов переведена на ролевую основу — сравнение начинается заново.")
     focus = _select_focus(leaks)
 
     if focus is None:
@@ -47,6 +40,11 @@ def run_coach(matches: list[Match], account_id: int | None, llm: CoachLLM,
             progress_note=(progress.text if progress.status != "no_history" else None),
             generated_for_matches=match_ids,
         )
+        brief.leaks_snapshot = [
+            {"key": l.key, "metric": l.metric, "value": l.value,
+             "direction": l.direction, "role": l.role}
+            for l in leaks
+        ]
         save_brief(account_id, brief, cache_dir)
         return brief
 
@@ -61,6 +59,11 @@ def run_coach(matches: list[Match], account_id: int | None, llm: CoachLLM,
     brief.focus_direction = focus.direction
     brief.progress_note = progress.text if progress.status != "no_history" else None
     brief.generated_for_matches = match_ids
+    brief.leaks_snapshot = [
+        {"key": l.key, "metric": l.metric, "value": l.value,
+         "direction": l.direction, "role": l.role}
+        for l in leaks
+    ]
 
     save_brief(account_id, brief, cache_dir)
     return brief

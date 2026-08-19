@@ -23,7 +23,7 @@ def test_coach_dry_run_prints_prompt_without_llm(tmp_path, monkeypatch, capsys):
 
     def _p(deaths, obs, gpm):
         return PlayerMatch(
-            account_id=111, player_slot=0, hero_id=1, is_radiant=True,
+            account_id=111, player_slot=0, hero_id=1, is_radiant=True, position_est=4,
             kills=0, deaths=deaths, assists=0, gold_per_min=0, xp_per_min=0, last_hits=0,
             gold_t=[], xp_t=[], lh_t=[], kills_log=[], purchase_log=[],
             obs_log=[{"time": 60}] * obs, sen_log=[],

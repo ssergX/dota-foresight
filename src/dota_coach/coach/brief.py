@@ -23,6 +23,9 @@ class CoachBrief:
     focus_metric: str = ""
     focus_value: float = 0.0
     focus_direction: str = "lower_is_better"
+    schema_version: int = 2
+    leaks_snapshot: list[dict] = field(default_factory=list)
+    baseline_reset: bool = False   # рантайм-флаг (НЕ сериализуется): прошлый фокус переименован
 
 
 def _strip_code_fence(text: str) -> str:
@@ -67,6 +70,8 @@ def parse_brief(raw: str | dict) -> CoachBrief:
         focus_metric=str(data.get("focus_metric") or ""),
         focus_value=float(data.get("focus_value", 0.0)),
         focus_direction=str(data.get("focus_direction") or "lower_is_better"),
+        schema_version=int(data.get("schema_version", 2)),
+        leaks_snapshot=list(data.get("leaks_snapshot", [])),
     )
 
 
@@ -82,4 +87,6 @@ def brief_to_dict(b: CoachBrief) -> dict:
         "focus_metric": b.focus_metric,
         "focus_value": b.focus_value,
         "focus_direction": b.focus_direction,
+        "schema_version": b.schema_version,
+        "leaks_snapshot": b.leaks_snapshot,
     }

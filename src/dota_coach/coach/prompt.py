@@ -19,15 +19,28 @@ _SYSTEM = (
 )
 
 
+_SOURCE_RU = {
+    "bench": "ниже, чем у ~60% игроков на этом герое (бенчмарк)",
+    "manual": "ниже разумной планки для этой роли",
+    "personal": "хуже твоего личного базлайна",
+}
+
+
+def _role_ru(role: int | None) -> str:
+    return f"pos{role}" if role in (1, 2, 3, 4, 5) else "роль не определена"
+
+
 def _leaks_block(leaks: list[Leak]) -> str:
     if not leaks:
         return "(ликов не обнаружено)"
-    lines = [
-        f"- key={leak.key} | {leak.title} | metric={leak.metric} | "
-        f"value={leak.value:.3f} | threshold={leak.threshold:.3f} | "
-        f"direction={leak.direction} | примеры_матчей={leak.example_matches}"
-        for leak in leaks
-    ]
+    lines = []
+    for leak in leaks:
+        src = _SOURCE_RU.get(leak.source, leak.source)
+        lines.append(
+            f"- key={leak.key} | {leak.title} | {_role_ru(leak.role)} | metric={leak.metric} | "
+            f"value={leak.value:.3f} | threshold={leak.threshold:.3f} | "
+            f"direction={leak.direction} | оценка={src} | примеры={leak.example_matches}"
+        )
     return "\n".join(lines)
 
 
@@ -40,9 +53,17 @@ def _progress_block(progress: ProgressNote | None, prior: CoachBrief | None) -> 
 def build_coach_prompt(leaks: list[Leak], progress: ProgressNote | None,
                        principles: str, prior: CoachBrief | None,
                        focus_key: str) -> list[dict]:
+    focus = next((l for l in leaks if l.key == focus_key), None)
+    family = focus.family if focus else ""
+    confirming = [l for l in leaks if l.family == family and l.key != focus_key]
+    conf_block = ("\n".join(f"- {l.title}: {l.metric}={l.value:.3f}" for l in confirming)
+                  or "(нет)")
+    role_line = _role_ru(focus.role) if focus else "роль не определена"
     user = (
+        f"Роль разбора: {role_line}\n\n"
         f"Лики по серии (детерминированный детектор):\n{_leaks_block(leaks)}\n\n"
-        f"Главный лик-фокус: {focus_key}\n\n"
+        f"Главный лик-фокус: {focus_key}\n"
+        f"Подтверждающие детали той же семьи:\n{conf_block}\n\n"
         f"Прогресс с прошлого разбора:\n{_progress_block(progress, prior)}\n\n"
         f"Тренерские принципы по этому лику:\n{principles}\n\n"
         "Сформулируй разбор строго по фокус-лику в заданном JSON-формате."

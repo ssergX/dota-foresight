@@ -4,7 +4,7 @@ from dota_coach.report import render_coach_html
 
 
 def _leak():
-    return Leak(key="low_warding", title="Мало вардов",
+    return Leak(key="low_obs", title="Мало вардов",
                 magnitude="в среднем 1.0 обс-вардов за игру (порог 4)",
                 example_matches=[1, 2], confidence=Confidence.HIGH,
                 metric="obs_per_game", value=1.0, threshold=4.0, direction="higher_is_better")
@@ -12,7 +12,7 @@ def _leak():
 
 def _brief():
     return CoachBrief(
-        focus_leak_key="low_warding", headline="Тебя топит вижн",
+        focus_leak_key="low_obs", headline="Тебя топит вижн",
         diagnosis="варды в p1", why_it_costs="нет информации — лишние смерти",
         drills=[Drill(text="ставь обс на руну", metric_ref="obs_per_game")],
         progress_note="варды p1 → p3 — прогресс",
