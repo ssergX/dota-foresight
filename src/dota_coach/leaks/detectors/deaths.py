@@ -39,27 +39,14 @@ def _hero_max(r: Row) -> float:
                      default=0))
 
 
-def _hero_totals(rows: list[Row]) -> dict[str, float]:
-    # суммируем убийства одним и тем же героем по всей серии матчей (killed_by содержит
-    # только крипов/вышки/нейтралов/героев за конкретный матч — их НЕ считаем, кроме героев)
-    totals: dict[str, float] = {}
-    for r in rows:
-        for k, v in r.me.killed_by.items():
-            if k.startswith("npc_dota_hero_"):
-                totals[k] = totals.get(k, 0.0) + v
-    return totals
-
-
 @detector(key="repeat_victim", title="Одна и та же жертва", roles=(1, 2, 3, 4, 5),
           requires=("killed_by",), impact=0.5, phase="deaths", family="deaths")
 def repeat_victim(rows: list[Row], role: int, th: Thresholds) -> Leak | None:
     thr = th.manual("repeat_victim_kills", role)
-    # metric = "суммарно один герой убил ≥ N раз по серии" (thresholds.py) — сумма
-    # по одному герою за всю рассматриваемую серию матчей, а не среднее за игру.
-    worst_total = max(_hero_totals(rows).values(), default=0.0)
-    if thr is None or worst_total <= thr:
+    avg = mean_of(rows, _hero_max)   # scale-invariant: среднее за игру, не сумма по серии
+    if thr is None or avg <= thr:
         return None
-    return make_leak(role=role, rows=rows, metric="repeat_victim_kills", value=round(worst_total, 1),
+    return make_leak(role=role, rows=rows, metric="repeat_victim_kills", value=round(avg, 1),
                      threshold=thr, direction="lower_is_better", source="manual",
-                     magnitude=f"один герой убил вас суммарно {worst_total:.0f} раз за серию",
+                     magnitude=f"один герой убивает в среднем {avg:.1f} раз за игру",
                      worst_key=_hero_max, worst_reverse=True)

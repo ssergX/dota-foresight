@@ -39,7 +39,14 @@ def test_time_dead_uses_fraction_of_duration():
     assert round(leak.value, 3) == 0.167 and leak.direction == "lower_is_better"
 
 
-def test_repeat_victim_sums_killed_by_over_series():
-    rows = [_row(i, killed_by={"npc_dota_hero_lion": 3}) for i in range(5)]  # 3/матч одним героем
+def test_repeat_victim_fires_on_per_game_mean():
+    # один герой убивает 3/игру -> mean 3.0 > порог 2.5 -> лик (не зависит от длины серии)
+    rows = [_row(i, killed_by={"npc_dota_hero_lion": 3}) for i in range(5)]
     leak = repeat_victim(rows, 4, TH)
-    assert leak is not None and leak.key == "repeat_victim"
+    assert leak is not None and leak.key == "repeat_victim" and leak.value == 3.0
+
+
+def test_repeat_victim_silent_when_spread_out():
+    # 2 смерти от худшего героя за игру -> mean 2.0 <= 2.5 -> молчит; крипы/вышки не в счёт
+    rows = [_row(i, killed_by={"npc_dota_hero_lion": 2, "npc_dota_creep_badguys_melee": 5}) for i in range(5)]
+    assert repeat_victim(rows, 4, TH) is None

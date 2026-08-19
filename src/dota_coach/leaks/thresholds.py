@@ -10,7 +10,7 @@ _BENCH_FLOOR = 0.4  # bench-детекторы срабатывают ниже �
 _MANUAL: dict[str, dict] = {
     "deaths_per_game":         {"*": 8.0},
     "time_dead_frac":          {"*": 0.13},   # доля игры мёртвым
-    "repeat_victim_kills":     {"*": 4.0},    # суммарно один герой убил ≥ N раз по серии
+    "repeat_victim_kills":     {"*": 2.5},    # в среднем один герой убивает ≥ N раз ЗА ИГРУ (scale-invariant)
     "cs_at_10":                {1: 45.0, 2: 45.0, 3: 35.0},  # ластхиты к 10 мин
     "denies_per_game":         {"*": 8.0},
     "lane_efficiency_pct":     {"*": 40.0},   # ниже — провален лейн
