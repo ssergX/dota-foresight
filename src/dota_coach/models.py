@@ -159,3 +159,39 @@ class Leak:
 class ClockRead:
     t_video: float
     t_game: int
+
+
+@dataclass(frozen=True)
+class UnitState:
+    slot: int
+    x: float
+    y: float
+    hp: int
+    max_hp: int
+    mana: float
+    level: int
+    xp: int
+    alive: bool
+
+
+@dataclass(frozen=True)
+class ReplayFrame:
+    time: int
+    units: dict[int, UnitState]
+
+
+@dataclass(frozen=True)
+class ParsedReplay:
+    match_id: int
+    game_start_time: float
+    heroes: dict[int, str]
+    frames: list[ReplayFrame]
+
+    def frame_at(self, t: int) -> "ReplayFrame | None":
+        best = None
+        for f in self.frames:            # frames отсортированы по time на парсинге
+            if f.time <= t:
+                best = f
+            else:
+                break
+        return best
