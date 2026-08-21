@@ -89,3 +89,17 @@ def test_analyze_coach_renders_moment_brief(tmp_path, monkeypatch, capsys):
     assert rc == 0
     html = out.read_text(encoding="utf-8")
     assert "Разбор фокус-момента" in html and "H" in html
+
+
+def test_analyze_video_offset_flag_parses():
+    from dota_coach.cli import build_parser
+    args = build_parser().parse_args(
+        ["analyze", "--match-id", "1", "--account-id", "2", "--video", "g.mp4", "--video-offset", "5.5"])
+    assert args.video_offset == 5.5
+    args2 = build_parser().parse_args(["analyze", "--match-id", "1", "--account-id", "2"])
+    assert args2.video_offset is None
+
+
+def test_grab_moment_frame_bad_video_degrades_to_none():
+    from dota_coach.cli import _grab_moment_frame
+    assert _grab_moment_frame("does_not_exist.mp4", game_time=100, offset=0.0) is None

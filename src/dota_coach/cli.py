@@ -18,6 +18,7 @@ from dota_coach.report import render_coach_html, render_report
 from dota_coach.scoring import score_events
 from dota_coach.video.align import (
     compute_offset, crop_hud_clock, opencv_frame_at, sample_clock_reads, tesseract_clock_ocr,
+    video_time_for,
 )
 
 
@@ -53,34 +54,32 @@ def _video_offset(video_path: str, duration: int) -> float:
 
 
 def _replay_info_state(match: Match, match_id: int, account_id: int | None, moments):
-    """Инфо-состояние + миникарта фокус-момента из реплея. Реплей опционален: сбой -> (None, None)."""
+    """Инфо-состояние (что было знаемо) в фокус-момент из реплея. Реплей опционален: сбой -> None."""
     focus = select_focus_moment(moments)
     me = match.player_by_account(account_id)
     if focus is None or me is None:
-        return None, None
+        return None
     slot = me.player_slot if me.player_slot < 128 else me.player_slot - 123
     try:
-        print("тяну реплей для инфо-состояния и карты (первый раз — до минуты)...")
-        parsed = parse_replay(match_id)
-        info = info_state_at(parsed, focus.event.game_time, slot)
-        img_b64 = None
-        try:
-            import base64
-            import tempfile
-
-            from dota_coach.minimap import render_moment
-
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
-                png = tf.name
-            render_moment(parsed, focus.event.game_time, slot, png, f"матч {match_id}")
-            img_b64 = base64.b64encode(Path(png).read_bytes()).decode()
-            Path(png).unlink(missing_ok=True)
-        except Exception as exc:  # noqa: BLE001 - карта необязательна, разбор всё равно рендерим
-            print(f"миникарта пропущена: {exc}")
-        return info, img_b64
+        print("тяну реплей для инфо-состояния (первый раз — до минуты)...")
+        return info_state_at(parse_replay(match_id), focus.event.game_time, slot)
     except ReplayUnavailable as exc:
         print(f"реплей-слой пропущен: {exc}")
-        return None, None
+        return None
+
+
+def _grab_moment_frame(video_path: str, game_time: int, offset: float):
+    """Реальный кадр записи в фокус-момент -> base64 PNG. Кадр необязателен: сбой -> None."""
+    try:
+        import base64
+
+        from dota_coach.video.grab import frame_png_at
+
+        png = frame_png_at(video_path, video_time_for(game_time, offset))
+        return base64.b64encode(png).decode()
+    except Exception as exc:  # noqa: BLE001 - кадр необязателен, разбор всё равно рендерим
+        print(f"кадр из записи не получен: {exc}")
+        return None
 
 
 def _cmd_analyze(args: argparse.Namespace) -> int:
@@ -89,15 +88,19 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     video_filename = None
     if args.video:
         video_filename = Path(args.video).name
-        offset = _video_offset(args.video, match.duration)
+        offset = args.video_offset if args.video_offset is not None else _video_offset(args.video, match.duration)
 
     moment_brief = None
     moment_image_b64 = None
     if args.coach:
         try:
             moments = score_moments(match, args.account_id, args.top_n)
-            info, moment_image_b64 = _replay_info_state(match, args.match_id, args.account_id, moments)
+            info = _replay_info_state(match, args.match_id, args.account_id, moments)
             moment_brief = explain_moment(moments, make_llm(args.provider), info_state=info)
+            if args.video:
+                focus = select_focus_moment(moments)
+                if focus is not None:
+                    moment_image_b64 = _grab_moment_frame(args.video, focus.event.game_time, offset)
         except Exception as exc:  # noqa: BLE001 - LLM-разбор опционален, отчёт по данным всё равно рендерим
             print(f"LLM-разбор момента пропущен: {exc}")
 
@@ -166,7 +169,9 @@ def build_parser() -> argparse.ArgumentParser:
     a = sub.add_parser("analyze", help="разбор одного матча")
     a.add_argument("--match-id", type=int, required=True, dest="match_id")
     a.add_argument("--account-id", type=int, required=True, dest="account_id")
-    a.add_argument("--video", default=None)
+    a.add_argument("--video", default=None, help="mp4-запись матча — из неё берётся реальный кадр момента")
+    a.add_argument("--video-offset", type=float, default=None, dest="video_offset",
+                   help="секунда записи, где игровое время = 0:00 (иначе OCR HUD-часов)")
     a.add_argument("--out", default="report.html")
     a.add_argument("--top-n", type=int, default=10, dest="top_n")
     a.add_argument("--coach", action="store_true", help="LLM-разбор фокус-момента")
