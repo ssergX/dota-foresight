@@ -4,11 +4,14 @@ import argparse
 from pathlib import Path
 
 from dota_coach.benchmarks import player_benchmarks
+from dota_coach.coach.info_state import info_state_at
 from dota_coach.coach.llm import make_llm
 from dota_coach.coach.moment_coach import explain_moment
+from dota_coach.coach.moment_focus import select_focus_moment
 from dota_coach.events import extract_events
 from dota_coach.ingest.normalize import normalize
 from dota_coach.ingest.opendota import fetch_match, fetch_recent
+from dota_coach.ingest.replay import ReplayUnavailable, parse_replay
 from dota_coach.leaks import detect_leaks
 from dota_coach.models import Match
 from dota_coach.report import render_coach_html, render_report
@@ -47,6 +50,22 @@ def _video_offset(video_path: str, duration: int) -> float:
     return compute_offset(reads)
 
 
+def _replay_info_state(match: Match, match_id: int, account_id: int | None, moments):
+    """Инфо-состояние в фокус-момент из реплея. Реплей-слой опционален: сбой -> None."""
+    focus = select_focus_moment(moments)
+    me = match.player_by_account(account_id)
+    if focus is None or me is None:
+        return None
+    slot = me.player_slot if me.player_slot < 128 else me.player_slot - 123
+    try:
+        print("тяну реплей для инфо-состояния (первый раз — до минуты)...")
+        parsed = parse_replay(match_id)
+        return info_state_at(parsed, focus.event.game_time, slot)
+    except ReplayUnavailable as exc:
+        print(f"реплей-слой пропущен: {exc}")
+        return None
+
+
 def _cmd_analyze(args: argparse.Namespace) -> int:
     match = normalize(fetch_match(args.match_id))
     offset = 0.0
@@ -59,7 +78,8 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     if args.coach:
         try:
             moments = score_moments(match, args.account_id, args.top_n)
-            moment_brief = explain_moment(moments, make_llm(args.provider))
+            info = _replay_info_state(match, args.match_id, args.account_id, moments)
+            moment_brief = explain_moment(moments, make_llm(args.provider), info_state=info)
         except Exception as exc:  # noqa: BLE001 - LLM-разбор опционален, отчёт по данным всё равно рендерим
             print(f"LLM-разбор момента пропущен: {exc}")
 

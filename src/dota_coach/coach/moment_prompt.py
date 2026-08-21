@@ -24,19 +24,28 @@ def _fmt_time(sec: int) -> str:
     return f"{sec // 60}:{sec % 60:02d}"
 
 
-def build_moment_prompt(moment: ScoredMoment, principle: str) -> list[dict]:
+def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = "") -> list[dict]:
     ev = moment.event
     reasons = "; ".join(moment.reasons) or "(нет)"
     numbers = ", ".join(f"{k}={v}" for k, v in ev.data.items()) or "(нет)"
+    knowable = f"\n{info_block}\n" if info_block else ""
+    guidance = (
+        "Разбери этот момент строго в заданном JSON-формате."
+        if not info_block else
+        "Разбери этот момент строго в заданном JSON-формате. Опирайся на блок «что было "
+        "знаемо» как на ФАКТЫ (непросвеченные враги и их длительность пропажи, твои ресурсы) — "
+        "это то, что читалось. Отделяй факт из данных от гипотезы о твоём решении."
+    )
     user = (
         "Фокус-момент матча:\n"
         f"- тип: {ev.type.value}\n"
         f"- время: {_fmt_time(ev.game_time)}\n"
         f"- вердикт детектора: {moment.verdict.value}\n"
         f"- причины разметки: {reasons}\n"
-        f"- числа: {numbers}\n\n"
+        f"- числа: {numbers}\n"
+        f"{knowable}\n"
         f"Тренерский принцип для момента этого типа:\n{principle}\n\n"
-        "Разбери этот момент строго в заданном JSON-формате."
+        f"{guidance}"
     )
     return [
         {"role": "system", "content": _SYSTEM},

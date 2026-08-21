@@ -95,7 +95,7 @@ class ClaudeCliLLM:
 
     def __init__(self, claude_bin: str | None = None,
                  cache_dir: Path = Path("cache") / "coach_llm",
-                 timeout: float = 120.0, runner=None):
+                 timeout: float = 180.0, runner=None):
         self.claude_bin = claude_bin or os.environ.get("DOTA_COACH_CLAUDE_BIN") or "claude"
         self.cache_dir = cache_dir
         self.timeout = timeout

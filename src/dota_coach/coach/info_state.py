@@ -42,6 +42,30 @@ class InfoState:
     max_missing_for: int   # самая долгая пропажа среди живых врагов
 
 
+def _hero(name: str) -> str:
+    return name[len("CDOTA_Unit_Hero_"):] if name.startswith("CDOTA_Unit_Hero_") else name
+
+
+def render_info_state(info: "InfoState") -> str:
+    """Текстовый блок «что было знаемо» для промпта. Только факты, без исхода матча."""
+    me = f"HP {info.my_hp}/{info.my_max_hp}, мана {info.my_mana:.0f}, ур. {info.my_level}"
+    if not info.my_alive:
+        me += ", МЁРТВ"
+    alive = [e for e in info.enemies if e.alive]
+    visible = [_hero(e.hero) for e in alive if e.visible]
+    unseen = sorted((e for e in alive if not e.visible), key=lambda e: -e.missing_for)
+    vis_line = ", ".join(visible) if visible else "никого"
+    unseen_line = (", ".join(f"{_hero(e.hero)} (пропал {e.missing_for}с)" for e in unseen)
+                   if unseen else "все живые враги видны")
+    tail = f", дольше всех — {info.max_missing_for}с." if info.unseen_enemies else "."
+    return (
+        "Что было знаемо в этот момент (из реплея; вижн — оценка):\n"
+        f"- Ты: {me}.\n"
+        f"- Видно врагов: {vis_line}.\n"
+        f"- Не видно: {unseen_line}. Всего непросвечено: {info.unseen_enemies}{tail}"
+    )
+
+
 def _d2(ax: float, ay: float, bx: float, by: float) -> float:
     return (ax - bx) ** 2 + (ay - by) ** 2
 

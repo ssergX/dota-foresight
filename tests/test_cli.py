@@ -78,6 +78,12 @@ def test_analyze_coach_renders_moment_brief(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr("dota_coach.cli.make_llm", lambda provider: __import__(
         "dota_coach.coach.llm", fromlist=["FakeLLM"]).FakeLLM(canned))
 
+    def _no_replay(mid):
+        from dota_coach.ingest.replay import ReplayUnavailable
+        raise ReplayUnavailable("нет реплея в тесте")
+
+    monkeypatch.setattr("dota_coach.cli.parse_replay", _no_replay)  # реплей-слой опционален -> деградация
+
     out = tmp_path / "r.html"
     rc = main(["analyze", "--match-id", "5", "--account-id", "111", "--coach", "--out", str(out)])
     assert rc == 0
