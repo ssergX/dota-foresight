@@ -28,10 +28,12 @@ def score_moments(match: Match, account_id: int | None, top_n: int):
 
 
 def build_match_report(match: Match, account_id: int | None, video_filename: str | None,
-                       offset: float, top_n: int = 10, moment_brief=None) -> str:
+                       offset: float, top_n: int = 10, moment_brief=None,
+                       moment_image_b64=None) -> str:
     moments = score_moments(match, account_id, top_n)
     return render_report(match.match_id, moments, leaks=[],
-                         video_filename=video_filename, offset=offset, moment_brief=moment_brief)
+                         video_filename=video_filename, offset=offset, moment_brief=moment_brief,
+                         moment_image_b64=moment_image_b64)
 
 
 def _video_offset(video_path: str, duration: int) -> float:
@@ -51,19 +53,34 @@ def _video_offset(video_path: str, duration: int) -> float:
 
 
 def _replay_info_state(match: Match, match_id: int, account_id: int | None, moments):
-    """Инфо-состояние в фокус-момент из реплея. Реплей-слой опционален: сбой -> None."""
+    """Инфо-состояние + миникарта фокус-момента из реплея. Реплей опционален: сбой -> (None, None)."""
     focus = select_focus_moment(moments)
     me = match.player_by_account(account_id)
     if focus is None or me is None:
-        return None
+        return None, None
     slot = me.player_slot if me.player_slot < 128 else me.player_slot - 123
     try:
-        print("тяну реплей для инфо-состояния (первый раз — до минуты)...")
+        print("тяну реплей для инфо-состояния и карты (первый раз — до минуты)...")
         parsed = parse_replay(match_id)
-        return info_state_at(parsed, focus.event.game_time, slot)
+        info = info_state_at(parsed, focus.event.game_time, slot)
+        img_b64 = None
+        try:
+            import base64
+            import tempfile
+
+            from dota_coach.minimap import render_moment
+
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tf:
+                png = tf.name
+            render_moment(parsed, focus.event.game_time, slot, png, f"матч {match_id}")
+            img_b64 = base64.b64encode(Path(png).read_bytes()).decode()
+            Path(png).unlink(missing_ok=True)
+        except Exception as exc:  # noqa: BLE001 - карта необязательна, разбор всё равно рендерим
+            print(f"миникарта пропущена: {exc}")
+        return info, img_b64
     except ReplayUnavailable as exc:
         print(f"реплей-слой пропущен: {exc}")
-        return None
+        return None, None
 
 
 def _cmd_analyze(args: argparse.Namespace) -> int:
@@ -75,16 +92,17 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         offset = _video_offset(args.video, match.duration)
 
     moment_brief = None
+    moment_image_b64 = None
     if args.coach:
         try:
             moments = score_moments(match, args.account_id, args.top_n)
-            info = _replay_info_state(match, args.match_id, args.account_id, moments)
+            info, moment_image_b64 = _replay_info_state(match, args.match_id, args.account_id, moments)
             moment_brief = explain_moment(moments, make_llm(args.provider), info_state=info)
         except Exception as exc:  # noqa: BLE001 - LLM-разбор опционален, отчёт по данным всё равно рендерим
             print(f"LLM-разбор момента пропущен: {exc}")
 
     html = build_match_report(match, args.account_id, video_filename, offset, args.top_n,
-                              moment_brief=moment_brief)
+                              moment_brief=moment_brief, moment_image_b64=moment_image_b64)
     Path(args.out).write_text(html, encoding="utf-8")
     print(f"report -> {args.out}")
     return 0

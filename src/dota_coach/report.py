@@ -35,7 +35,8 @@ def _fmt_time(sec: int) -> str:
     return f"{sec // 60}:{sec % 60:02d}"
 
 
-def _moment_brief_section(brief: MomentBrief, video_filename: str | None, offset: float) -> str:
+def _moment_brief_section(brief: MomentBrief, video_filename: str | None, offset: float,
+                          image_b64: str | None = None) -> str:
     ts = _fmt_time(brief.game_time)
     if video_filename:
         t = video_time_for(brief.game_time, offset)
@@ -44,8 +45,11 @@ def _moment_brief_section(brief: MomentBrief, video_filename: str | None, offset
         anchor = f"<b>{ts}</b>"
     verdict = _VERDICT_RU.get(brief.verdict, brief.verdict)
     checklist = "\n".join(f"<li>{_html.escape(c)}</li>" for c in brief.checklist)
+    img = (f"<img src='data:image/png;base64,{image_b64}' width='720' "
+           f"style='border-radius:8px;margin:6px 0;max-width:100%'>" if image_b64 else "")
     return (
         f"<h2>Разбор фокус-момента {anchor} <span class='meta'>[{verdict}]</span></h2>"
+        f"{img}"
         f"<h3>{_html.escape(brief.headline)}</h3>"
         f"<p><b>Вероятно:</b> {_html.escape(brief.hypothesis)}</p>"
         f"<p><b>Спроси себя:</b> {_html.escape(brief.process_question)}</p>"
@@ -62,7 +66,8 @@ def _leak_row(l: Leak) -> str:
 
 def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
                   video_filename: str | None, offset: float,
-                  moment_brief: MomentBrief | None = None) -> str:
+                  moment_brief: MomentBrief | None = None,
+                  moment_image_b64: str | None = None) -> str:
     video_block = ""
     script = ""
     if video_filename:
@@ -74,7 +79,7 @@ def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
     moment_items = "\n".join(_moment_row(m, video_filename, offset) for m in moments)
     leak_items = "\n".join(_leak_row(l) for l in leaks)
     leaks_section = (f"<h2>Системные лики</h2><ul>{leak_items}</ul>" if leaks else "")
-    brief_section = (_moment_brief_section(moment_brief, video_filename, offset)
+    brief_section = (_moment_brief_section(moment_brief, video_filename, offset, moment_image_b64)
                      if moment_brief else "")
 
     return f"""<!doctype html>
