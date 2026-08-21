@@ -3,6 +3,7 @@ from __future__ import annotations
 import html as _html
 
 from dota_coach.coach.brief import CoachBrief
+from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.coach.progress import ProgressNote
 from dota_coach.models import Leak, ScoredMoment
 from dota_coach.video.align import video_time_for
@@ -30,6 +31,29 @@ def _moment_row(m: ScoredMoment, video_filename: str | None, offset: float) -> s
     return f"<li>{m.event.game_time}s — {body}</li>"
 
 
+def _fmt_time(sec: int) -> str:
+    return f"{sec // 60}:{sec % 60:02d}"
+
+
+def _moment_brief_section(brief: MomentBrief, video_filename: str | None, offset: float) -> str:
+    ts = _fmt_time(brief.game_time)
+    if video_filename:
+        t = video_time_for(brief.game_time, offset)
+        anchor = f"<button onclick=\"seek({t:.3f})\">▶ {ts}</button>"
+    else:
+        anchor = f"<b>{ts}</b>"
+    verdict = _VERDICT_RU.get(brief.verdict, brief.verdict)
+    checklist = "\n".join(f"<li>{_html.escape(c)}</li>" for c in brief.checklist)
+    return (
+        f"<h2>Разбор фокус-момента {anchor} <span class='meta'>[{verdict}]</span></h2>"
+        f"<h3>{_html.escape(brief.headline)}</h3>"
+        f"<p><b>Вероятно:</b> {_html.escape(brief.hypothesis)}</p>"
+        f"<p><b>Спроси себя:</b> {_html.escape(brief.process_question)}</p>"
+        f"<p><b>Проверь:</b></p><ul>{checklist}</ul>"
+        f"<p class='reasons'>{_html.escape(brief.principle)}</p>"
+    )
+
+
 def _leak_row(l: Leak) -> str:
     ex = ", ".join(str(x) for x in l.example_matches)
     return (f"<li><b>{_html.escape(l.title)}</b>: {_html.escape(l.magnitude)}"
@@ -37,7 +61,8 @@ def _leak_row(l: Leak) -> str:
 
 
 def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
-                  video_filename: str | None, offset: float) -> str:
+                  video_filename: str | None, offset: float,
+                  moment_brief: MomentBrief | None = None) -> str:
     video_block = ""
     script = ""
     if video_filename:
@@ -49,6 +74,8 @@ def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
     moment_items = "\n".join(_moment_row(m, video_filename, offset) for m in moments)
     leak_items = "\n".join(_leak_row(l) for l in leaks)
     leaks_section = (f"<h2>Системные лики</h2><ul>{leak_items}</ul>" if leaks else "")
+    brief_section = (_moment_brief_section(moment_brief, video_filename, offset)
+                     if moment_brief else "")
 
     return f"""<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">
@@ -61,6 +88,7 @@ def render_report(match_id: int, moments: list[ScoredMoment], leaks: list[Leak],
 </style></head><body>
 <h1>Разбор матча {match_id}</h1>
 {video_block}
+{brief_section}
 <h2>Ключевые моменты</h2>
 <ul>{moment_items}</ul>
 {leaks_section}

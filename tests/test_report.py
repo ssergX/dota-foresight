@@ -1,3 +1,4 @@
+from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.models import (
     Confidence, EventCandidate, EventType, Leak, ScoredMoment, Verdict,
 )
@@ -54,3 +55,27 @@ def test_report_without_video_has_no_seek_button_or_script():
     assert "<button" not in html          # CSS rule is 'button{', not '<button'
     assert 'onclick="seek(' not in html
     assert "<script" not in html
+
+
+def _brief():
+    return MomentBrief(headline="Слепой заход", hypothesis="вероятно без вижна",
+                       process_question="был ли эскейп?", checklist=["проверь варды"],
+                       principle="вижн перед заходом", game_time=845, verdict="mistake",
+                       event_type="networth_swing")
+
+
+def test_report_renders_moment_brief_section_no_video():
+    html = render_report(1, [], leaks=[], video_filename=None, offset=0.0, moment_brief=_brief())
+    assert "Разбор фокус-момента" in html
+    assert "Слепой заход" in html and "проверь варды" in html
+    assert "14:05" in html                       # таймкод текстом без видео
+
+
+def test_report_moment_brief_has_seek_button_with_video():
+    html = render_report(1, [], leaks=[], video_filename="v.mp4", offset=2.0, moment_brief=_brief())
+    assert "seek(" in html and "▶" in html       # кнопка seek при видео
+
+
+def test_report_without_moment_brief_unchanged():
+    html = render_report(1, [], leaks=[], video_filename=None, offset=0.0)
+    assert "Разбор фокус-момента" not in html
