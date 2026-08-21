@@ -10,7 +10,7 @@ from typing import Iterable
 import zstandard as zstd
 
 from dota_coach.ingest.opendota import fetch_match
-from dota_coach.models import ParsedReplay, ReplayFrame, UnitState
+from dota_coach.models import ParsedReplay, ReplayFrame, UnitState, WardEvent
 
 
 class ReplayUnavailable(Exception):
@@ -20,6 +20,7 @@ class ReplayUnavailable(Exception):
 def parse_replay_jsonl(lines: Iterable[str], match_id: int) -> ParsedReplay:
     meta: dict | None = None
     frames: list[ReplayFrame] = []
+    wards: list[WardEvent] = []
     for raw in lines:
         raw = raw.strip()
         if not raw:
@@ -38,12 +39,19 @@ def parse_replay_jsonl(lines: Iterable[str], match_id: int) -> ParsedReplay:
                 for u in obj["units"]
             }
             frames.append(ReplayFrame(time=int(obj["time"]), units=units))
+        elif kind == "ward":
+            wards.append(WardEvent(
+                id=int(obj["id"]), time=int(obj["time"]), kind=str(obj["kind"]),
+                team=int(obj["team"]), x=float(obj["x"]), y=float(obj["y"]), op=str(obj["op"]),
+            ))
     if meta is None:
         raise ValueError("в JSONL нет meta-строки — реплей не распарсен")
     frames.sort(key=lambda f: f.time)
+    wards.sort(key=lambda w: w.time)
     heroes = {h["slot"]: h["hero"] for h in meta["heroes"]}
+    teams = {h["slot"]: int(h["team"]) for h in meta["heroes"]}
     return ParsedReplay(match_id=match_id, game_start_time=float(meta["game_start_time"]),
-                        heroes=heroes, frames=frames)
+                        heroes=heroes, frames=frames, teams=teams, wards=wards)
 
 
 def _default_downloader(url: str) -> bytes:

@@ -181,11 +181,24 @@ class ReplayFrame:
 
 
 @dataclass(frozen=True)
+class WardEvent:
+    id: int
+    time: int
+    kind: str      # "obs" | "sentry"
+    team: int      # 2 Radiant / 3 Dire
+    x: float
+    y: float
+    op: str        # "placed" | "gone"
+
+
+@dataclass(frozen=True)
 class ParsedReplay:
     match_id: int
     game_start_time: float
     heroes: dict[int, str]
     frames: list[ReplayFrame]
+    teams: dict[int, int] = field(default_factory=dict)   # slot -> team (2/3)
+    wards: list[WardEvent] = field(default_factory=list)
 
     def frame_at(self, t: int) -> "ReplayFrame | None":
         best = None
