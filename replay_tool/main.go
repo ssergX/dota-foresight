@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"strings"
 
 	"github.com/dotabuff/manta"
 	"github.com/dotabuff/manta/dota"
@@ -66,6 +67,17 @@ type heroMeta struct {
 	Hero string `json:"hero"`
 }
 
+type wardOut struct {
+	T    string  `json:"t"`
+	ID   int     `json:"id"`
+	Time int     `json:"time"`
+	Kind string  `json:"kind"`
+	Team int     `json:"team"`
+	X    float64 `json:"x"`
+	Y    float64 `json:"y"`
+	Op   string  `json:"op"`
+}
+
 type metaLine struct {
 	T         string     `json:"t"`
 	GameStart float64    `json:"game_start_time"`
@@ -97,6 +109,7 @@ func main() {
 	state := map[int]unitOut{}
 	lastEmit := math.MinInt32
 	var frames []stateLine
+	var wards []wardOut
 
 	p.Callbacks.OnCNETMsg_Tick(func(t *dota.CNETMsg_Tick) error {
 		curTick = int(t.GetTick())
@@ -109,6 +122,38 @@ func main() {
 			if v, ok := f64(e.Map(), "m_pGameRules.m_flGameStartTime"); ok && v > 0 {
 				gameStart = v
 			}
+			return nil
+		}
+		if cn == "CDOTA_NPC_Observer_Ward" || cn == "CDOTA_NPC_Observer_Ward_TrueSight" {
+			if gameStart <= 0 {
+				return nil
+			}
+			gt := float64(curTick)/tickRate - gameStart
+			if gt < 0 {
+				return nil
+			}
+			var wop string
+			if op&manta.EntityOpCreated != 0 {
+				wop = "placed"
+			} else if op&manta.EntityOpDeleted != 0 {
+				wop = "gone"
+			} else {
+				return nil
+			}
+			m := e.Map()
+			cx, _ := f64(m, "CBodyComponent.m_cellX")
+			cy, _ := f64(m, "CBodyComponent.m_cellY")
+			vx, _ := f64(m, "CBodyComponent.m_vecX")
+			vy, _ := f64(m, "CBodyComponent.m_vecY")
+			team, _ := f64(m, "m_iTeamNum")
+			kind := "obs"
+			if strings.Contains(cn, "TrueSight") {
+				kind = "sentry"
+			}
+			wards = append(wards, wardOut{
+				T: "ward", ID: int(e.GetIndex()), Time: int(math.Floor(gt)), Kind: kind,
+				Team: int(team), X: cx*cellWidth + vx - mapHalf, Y: cy*cellWidth + vy - mapHalf, Op: wop,
+			})
 			return nil
 		}
 		if len(cn) < len(heroPrefix) || cn[:len(heroPrefix)] != heroPrefix {
@@ -187,6 +232,12 @@ func main() {
 	for _, fr := range frames {
 		if err := enc.Encode(fr); err != nil {
 			fmt.Fprintln(os.Stderr, "encode state:", err)
+			os.Exit(1)
+		}
+	}
+	for _, wd := range wards {
+		if err := enc.Encode(wd); err != nil {
+			fmt.Fprintln(os.Stderr, "encode ward:", err)
 			os.Exit(1)
 		}
 	}
