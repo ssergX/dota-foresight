@@ -10,3 +10,5 @@ cache/
 out/
 *.mp4
 report.html
+replay_tool/replay_tool
+replay_tool/replay_tool.exe
