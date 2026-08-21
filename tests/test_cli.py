@@ -49,3 +49,37 @@ def test_coach_dry_run_prints_prompt_without_llm(tmp_path, monkeypatch, capsys):
     assert rc == 0
     assert "system" in out
     assert "Главный лик-фокус" in out   # промпт напечатан, ЛЛМ не вызывался
+
+
+def test_analyze_coach_flag_defaults_off():
+    from dota_coach.cli import build_parser
+    args = build_parser().parse_args(["analyze", "--match-id", "1", "--account-id", "2"])
+    assert args.coach is False
+
+
+def test_analyze_coach_renders_moment_brief(tmp_path, monkeypatch, capsys):
+    import json
+    from dota_coach.cli import main
+    from dota_coach.models import Match, PlayerMatch
+
+    def _match(mid):
+        # gold_t=[0,1000,200]: на 2-й минуте просадка -800 (<= -500) -> networth_swing (verdict MISTAKE)
+        me = PlayerMatch(account_id=111, player_slot=0, hero_id=1, is_radiant=True,
+                         kills=0, deaths=0, assists=0, gold_per_min=0, xp_per_min=0, last_hits=0,
+                         gold_t=[0, 1000, 200])
+        return Match(match_id=mid, duration=1800, radiant_win=True, players=[me],
+                     teamfights=[], objectives=[], parsed=True)
+
+    canned = json.dumps({"headline": "H", "hypothesis": "g", "process_question": "q",
+                         "checklist": ["c"], "principle": "p"})
+
+    monkeypatch.setattr("dota_coach.cli.fetch_match", lambda mid: {"id": mid})
+    monkeypatch.setattr("dota_coach.cli.normalize", lambda raw: _match(raw["id"]))
+    monkeypatch.setattr("dota_coach.cli.make_llm", lambda provider: __import__(
+        "dota_coach.coach.llm", fromlist=["FakeLLM"]).FakeLLM(canned))
+
+    out = tmp_path / "r.html"
+    rc = main(["analyze", "--match-id", "5", "--account-id", "111", "--coach", "--out", str(out)])
+    assert rc == 0
+    html = out.read_text(encoding="utf-8")
+    assert "Разбор фокус-момента" in html and "H" in html

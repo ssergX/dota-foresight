@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 
 from dota_coach.benchmarks import player_benchmarks
+from dota_coach.coach.llm import make_llm
+from dota_coach.coach.moment_coach import explain_moment
 from dota_coach.events import extract_events
 from dota_coach.ingest.normalize import normalize
 from dota_coach.ingest.opendota import fetch_match, fetch_recent
@@ -16,13 +18,17 @@ from dota_coach.video.align import (
 )
 
 
-def build_match_report(match: Match, account_id: int | None, video_filename: str | None,
-                       offset: float, top_n: int = 10) -> str:
+def score_moments(match: Match, account_id: int | None, top_n: int):
     events = extract_events(match, account_id)
     benches = player_benchmarks(match, account_id)
-    moments = score_events(events, benches, match, account_id, top_n=top_n)
+    return score_events(events, benches, match, account_id, top_n=top_n)
+
+
+def build_match_report(match: Match, account_id: int | None, video_filename: str | None,
+                       offset: float, top_n: int = 10, moment_brief=None) -> str:
+    moments = score_moments(match, account_id, top_n)
     return render_report(match.match_id, moments, leaks=[],
-                         video_filename=video_filename, offset=offset)
+                         video_filename=video_filename, offset=offset, moment_brief=moment_brief)
 
 
 def _video_offset(video_path: str, duration: int) -> float:
@@ -48,7 +54,17 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     if args.video:
         video_filename = Path(args.video).name
         offset = _video_offset(args.video, match.duration)
-    html = build_match_report(match, args.account_id, video_filename, offset, args.top_n)
+
+    moment_brief = None
+    if args.coach:
+        try:
+            moments = score_moments(match, args.account_id, args.top_n)
+            moment_brief = explain_moment(moments, make_llm(args.provider))
+        except Exception as exc:  # noqa: BLE001 - LLM-разбор опционален, отчёт по данным всё равно рендерим
+            print(f"LLM-разбор момента пропущен: {exc}")
+
+    html = build_match_report(match, args.account_id, video_filename, offset, args.top_n,
+                              moment_brief=moment_brief)
     Path(args.out).write_text(html, encoding="utf-8")
     print(f"report -> {args.out}")
     return 0
@@ -115,6 +131,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--video", default=None)
     a.add_argument("--out", default="report.html")
     a.add_argument("--top-n", type=int, default=10, dest="top_n")
+    a.add_argument("--coach", action="store_true", help="LLM-разбор фокус-момента")
+    a.add_argument("--provider", default=None, help="claude|openai; по умолчанию claude")
     a.set_defaults(func=_cmd_analyze)
 
     l = sub.add_parser("leaks", help="системные лики по последним матчам")
