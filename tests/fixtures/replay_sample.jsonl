@@ -1,0 +1,4 @@
+{"t":"meta","game_start_time":200.0,"tick_rate":30,"heroes":[{"slot":0,"team":2,"hero":"CDOTA_Unit_Hero_Axe"},{"slot":5,"team":3,"hero":"CDOTA_Unit_Hero_Pudge"}]}
+{"t":"state","time":2,"units":[{"slot":0,"x":10.0,"y":20.0,"hp":600,"max_hp":600,"mana":100.0,"level":1,"xp":0,"alive":true},{"slot":5,"x":-30.0,"y":40.0,"hp":700,"max_hp":700,"mana":200.0,"level":1,"xp":0,"alive":true}]}
+{"t":"state","time":0,"units":[{"slot":0,"x":1.0,"y":2.0,"hp":650,"max_hp":650,"mana":110.0,"level":1,"xp":0,"alive":true}]}
+{"t":"state","time":1,"units":[{"slot":0,"x":5.0,"y":6.0,"hp":640,"max_hp":650,"mana":105.0,"level":1,"xp":10,"alive":false}]}
