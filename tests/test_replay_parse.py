@@ -35,3 +35,34 @@ def test_unit_fields_parsed():
 def test_missing_meta_raises():
     with pytest.raises(ValueError):
         parse_replay_jsonl(['{"t":"state","time":0,"units":[]}'], match_id=1)
+
+
+from dota_coach.ingest.replay import ReplayUnavailable, parse_replay
+
+
+def test_parse_replay_cache_hit(tmp_path):
+    # положить готовый JSONL в кеш -> parse_replay читает его без сети
+    (tmp_path / "replay_5.jsonl").write_text(_FIX.read_text(encoding="utf-8"), encoding="utf-8")
+    r = parse_replay(5, cache_dir=tmp_path,
+                     downloader=lambda url: (_ for _ in ()).throw(AssertionError("сети быть не должно")),
+                     runner=lambda argv: (_ for _ in ()).throw(AssertionError("бинарь не звать")))
+    assert r.match_id == 5 and len(r.heroes) == 2
+
+
+def test_parse_replay_runner_failure_raises_unavailable(tmp_path, monkeypatch):
+    monkeypatch.setattr("dota_coach.ingest.replay.fetch_match",
+                        lambda mid: {"replay_url": "http://x/y.dem.bz2"})
+
+    def bad_runner(argv):
+        raise RuntimeError("бинарь упал")
+
+    with pytest.raises(ReplayUnavailable):
+        parse_replay(7, cache_dir=tmp_path,
+                     downloader=lambda url: b"\x28\xb5\x2f\xfd",
+                     runner=bad_runner)
+
+
+def test_parse_replay_no_replay_url_raises_unavailable(tmp_path, monkeypatch):
+    monkeypatch.setattr("dota_coach.ingest.replay.fetch_match", lambda mid: {})
+    with pytest.raises(ReplayUnavailable):
+        parse_replay(9, cache_dir=tmp_path)
