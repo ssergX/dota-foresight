@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import html as _html
+import os
 
 from dota_coach.coach.brief import CoachBrief
+from dota_coach.coach.episode_card import EpisodeCard
 from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.coach.progress import ProgressNote
 from dota_coach.models import Leak, ScoredMoment
@@ -149,3 +151,52 @@ def render_coach_html(brief: CoachBrief, leaks: list[Leak], progress: ProgressNo
 </style></head><body>
 {body}
 </body></html>"""
+
+
+def _episode_card_html(card: EpisodeCard, brief, clip: str | None) -> str:
+    ts = _fmt_time(card.game_time)
+    verdict = _VERDICT_RU.get(card.verdict.value, card.verdict.value)
+    video = (f"<video src='{_html.escape(clip)}' controls width='720' "
+             f"style='border-radius:8px;margin:6px 0;max-width:100%'></video>"
+             if clip else "")
+    nums = ", ".join(f"{k}={v}" for k, v in card.numbers.items())
+    brief_html = ""
+    if brief is not None:
+        checklist = "\n".join(f"<li>{_html.escape(c)}</li>" for c in brief.checklist)
+        brief_html = (
+            f"<h4>{_html.escape(brief.headline)}</h4>"
+            f"<p><b>Вероятно:</b> {_html.escape(brief.hypothesis)}</p>"
+            f"<p><b>Спроси себя:</b> {_html.escape(brief.process_question)}</p>"
+            f"<p><b>Проверь:</b></p><ul>{checklist}</ul>"
+            f"<p class='reasons'>{_html.escape(brief.principle)}</p>")
+    return (
+        f"<div class='card'>"
+        f"<h3>{ts} <span class='meta'>[{verdict}]</span></h3>"
+        f"{video}"
+        f"<p class='facts'>{_html.escape(card.facts)}</p>"
+        f"<p class='reasons'>{_html.escape(nums)}</p>"
+        f"{brief_html}"
+        f"</div>")
+
+
+def render_match_report(match_id: int, cards: list[EpisodeCard],
+                        deep_briefs: dict, clips: dict, out_dir: str) -> None:
+    os.makedirs(os.path.join(out_dir, "clips"), exist_ok=True)
+    body = "\n".join(
+        _episode_card_html(c, deep_briefs.get(c.game_time), clips.get(c.game_time))
+        for c in cards)
+    html = f"""<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<title>Dota Coach — разбор матча {match_id}</title>
+<style>
+  body{{font-family:sans-serif;max-width:860px;margin:24px auto;color:#eee;background:#1b1b1f}}
+  .card{{border:1px solid #333;border-radius:10px;padding:12px 16px;margin:14px 0;background:#212127}}
+  h1{{color:#fff}} h3{{color:#cde;margin:0 0 6px}} h4{{color:#fff;margin:8px 0 4px}}
+  .meta{{color:#9ab;font-size:13px}} .reasons{{color:#9a9;font-size:13px}}
+  .facts{{white-space:pre-line}}
+</style></head><body>
+<h1>Разбор матча {match_id} — {len(cards)} эпизодов</h1>
+{body}
+</body></html>"""
+    with open(os.path.join(out_dir, "index.html"), "w", encoding="utf-8") as f:
+        f.write(html)
