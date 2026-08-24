@@ -4,8 +4,8 @@ import argparse
 from pathlib import Path
 
 from dota_coach.benchmarks import player_benchmarks
-from dota_coach.coach.info_state import info_state_at
 from dota_coach.coach.llm import make_llm
+from dota_coach.coach.match_review import review_match
 from dota_coach.coach.moment_coach import explain_moment
 from dota_coach.coach.moment_focus import select_focus_moment
 from dota_coach.events import extract_events
@@ -14,7 +14,7 @@ from dota_coach.ingest.opendota import fetch_match, fetch_recent
 from dota_coach.ingest.replay import ReplayUnavailable, parse_replay
 from dota_coach.leaks import detect_leaks
 from dota_coach.models import Match
-from dota_coach.report import render_coach_html, render_report
+from dota_coach.report import render_coach_html, render_match_report, render_report
 from dota_coach.scoring import score_events
 from dota_coach.video.align import (
     compute_offset, crop_hud_clock, opencv_frame_at, sample_clock_reads, tesseract_clock_ocr,
@@ -53,21 +53,6 @@ def _video_offset(video_path: str, duration: int) -> float:
     return compute_offset(reads)
 
 
-def _replay_info_state(match: Match, match_id: int, account_id: int | None, moments):
-    """Инфо-состояние (что было знаемо) в фокус-момент из реплея. Реплей опционален: сбой -> None."""
-    focus = select_focus_moment(moments)
-    me = match.player_by_account(account_id)
-    if focus is None or me is None:
-        return None
-    slot = me.player_slot if me.player_slot < 128 else me.player_slot - 123
-    try:
-        print("тяну реплей для инфо-состояния (первый раз — до минуты)...")
-        return info_state_at(parse_replay(match_id), focus.event.game_time, slot)
-    except ReplayUnavailable as exc:
-        print(f"реплей-слой пропущен: {exc}")
-        return None
-
-
 def _grab_moment_frame(video_path: str, game_time: int, offset: float):
     """Реальный кадр записи в фокус-момент -> base64 PNG. Кадр необязателен: сбой -> None."""
     try:
@@ -82,8 +67,32 @@ def _grab_moment_frame(video_path: str, game_time: int, offset: float):
         return None
 
 
+def _build_clips(args: argparse.Namespace, match: Match, review, parsed) -> dict:
+    return {}   # Стадия B заполнит; сейчас без клипов
+
+
 def _cmd_analyze(args: argparse.Namespace) -> int:
     match = normalize(fetch_match(args.match_id))
+
+    # Новый путь: обзор всего матча по эпизодам (нужен реплей)
+    if args.coach:
+        try:
+            print("тяну реплей (первый раз — до минуты)...")
+            parsed = parse_replay(args.match_id)
+        except ReplayUnavailable as exc:
+            parsed = None
+            print(f"реплей недоступен: {exc}")
+        if parsed is not None:
+            review = review_match(match, parsed, args.account_id,
+                                  make_llm(args.provider), deep_n=args.deep_n)
+            clips = _build_clips(args, match, review, parsed)
+            render_match_report(match.match_id, review.cards, review.deep_briefs,
+                                clips, args.out)
+            print(f"обзор {len(review.cards)} эпизодов -> {args.out}/index.html")
+            return 0
+        print("нет реплея — одиночный фокус-разбор по данным")
+
+    # Fallback: прежний одиночный отчёт (нет реплея или без --coach)
     offset = 0.0
     video_filename = None
     if args.video:
@@ -95,8 +104,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
     if args.coach:
         try:
             moments = score_moments(match, args.account_id, args.top_n)
-            info = _replay_info_state(match, args.match_id, args.account_id, moments)
-            moment_brief = explain_moment(moments, make_llm(args.provider), info_state=info)
+            moment_brief = explain_moment(moments, make_llm(args.provider), info_state=None)
             if args.video:
                 focus = select_focus_moment(moments)
                 if focus is not None:
@@ -175,6 +183,8 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--out", default="report.html")
     a.add_argument("--top-n", type=int, default=10, dest="top_n")
     a.add_argument("--coach", action="store_true", help="LLM-разбор фокус-момента")
+    a.add_argument("--deep", type=int, default=1, dest="deep_n",
+                   help="сколько эпизодов разобрать LLM вглубь (кап 2)")
     a.add_argument("--provider", default=None, help="claude|openai; по умолчанию claude")
     a.set_defaults(func=_cmd_analyze)
 
