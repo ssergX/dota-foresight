@@ -51,7 +51,8 @@ def _severity(moment: ScoredMoment, parsed: ParsedReplay | None, my_slot: int) -
     sev = moment.score
     ev = moment.event
     if ev.type == EventType.DEATH and parsed is not None:
-        info = info_state_at(parsed, ev.game_time, my_slot)
+        # точка решения — заход в размен, ~5с ДО смерти (в сам момент смерти ты уже мёртв, hp=0)
+        info = info_state_at(parsed, max(0, ev.game_time - 5), my_slot)
         if info and info.my_max_hp and info.my_hp / info.my_max_hp > 0.6 \
                 and info.unseen_enemies >= 3:
             sev += 5.0  # умер на фулл-ХП вслепую — острый эпизод для deep-pick
