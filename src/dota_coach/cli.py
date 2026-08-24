@@ -17,9 +17,11 @@ from dota_coach.models import Match
 from dota_coach.report import render_coach_html, render_match_report, render_report
 from dota_coach.scoring import score_events
 from dota_coach.video.align import (
-    compute_offset, crop_hud_clock, opencv_frame_at, sample_clock_reads, tesseract_clock_ocr,
-    video_time_for,
+    auto_offset, compute_offset, crop_hud_clock, load_clock_templates, opencv_frame_at,
+    read_clock, sample_clock_reads, tesseract_clock_ocr, video_time_for,
 )
+from dota_coach.video.clip import extract as clip_extract
+from dota_coach.video.steam_recording import find_session, stitch_window
 
 
 def score_moments(match: Match, account_id: int | None, top_n: int):
@@ -67,12 +69,71 @@ def _grab_moment_frame(video_path: str, game_time: int, offset: float):
         return None
 
 
-def _build_clips(args: argparse.Namespace, match: Match, review, parsed) -> dict:
-    return {}   # Стадия B заполнит; сейчас без клипов
+def _ensure_video(args: argparse.Namespace, start_time, duration: int) -> str | None:
+    """Путь к mp4: явный --video, либо авто-сшивка окна матча из записи Steam."""
+    if args.video:
+        return args.video
+    if not args.gamerecordings or start_time is None:
+        return None
+    found = find_session(int(start_time), duration, args.gamerecordings)
+    if found is None:
+        print("запись матча в gamerecordings не найдена (буфер затёрт или другая сессия)")
+        return None
+    import imageio_ffmpeg
+    session_dir, avail = found
+    out_mp4 = str(Path(args.out) / "_match.mp4")
+    Path(args.out).mkdir(parents=True, exist_ok=True)
+    print("сшиваю окно матча из записи Steam...")
+    stitch_window(session_dir, avail, int(start_time), int(start_time) + duration,
+                  out_mp4, imageio_ffmpeg.get_ffmpeg_exe())
+    return out_mp4
+
+
+def _resolve_offset(args: argparse.Namespace, video: str) -> float | None:
+    """offset (video-сек, где игровое 0:00): ручной --video-offset или авто по HUD-часам."""
+    if args.video_offset is not None:
+        return float(args.video_offset)
+    try:
+        tmpls, meta = load_clock_templates()
+        frame_at = opencv_frame_at(video)
+        got = auto_offset(lambda t: read_clock(frame_at(t), tmpls, meta),
+                          coarse_seed=0.0, span=900, step=60)
+        if got is not None:
+            print(f"авто-offset по HUD-часам: {got:.1f}s")
+        else:
+            print("авто-offset не удался (нет кворума чтений); задай --video-offset")
+        return got
+    except Exception as exc:  # noqa: BLE001 - клипы необязательны
+        print(f"авто-выравнивание не удалось ({exc}); задай --video-offset")
+        return None
+
+
+def _build_clips(args: argparse.Namespace, review, start_time, duration: int) -> dict:
+    import imageio_ffmpeg
+
+    video = _ensure_video(args, start_time, duration)
+    if video is None:
+        return {}
+    offset = _resolve_offset(args, video)
+    if offset is None:
+        return {}
+    ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+    (Path(args.out) / "clips").mkdir(parents=True, exist_ok=True)
+    out: dict = {}
+    for i, e in enumerate(review.episodes):
+        gt = e.moment.event.game_time
+        rel = f"clips/{i:02d}.mp4"
+        try:
+            clip_extract(video, gt, offset, str(Path(args.out) / rel), ffmpeg=ffmpeg)
+            out[gt] = rel
+        except Exception as exc:  # noqa: BLE001 - клип необязателен
+            print(f"клип {gt}s пропущен: {exc}")
+    return out
 
 
 def _cmd_analyze(args: argparse.Namespace) -> int:
-    match = normalize(fetch_match(args.match_id))
+    raw = fetch_match(args.match_id)
+    match = normalize(raw)
 
     # Новый путь: обзор всего матча по эпизодам (нужен реплей)
     if args.coach:
@@ -85,7 +146,8 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
         if parsed is not None:
             review = review_match(match, parsed, args.account_id,
                                   make_llm(args.provider), deep_n=args.deep_n)
-            clips = _build_clips(args, match, review, parsed)
+            start_time = raw.get("start_time") if isinstance(raw, dict) else None
+            clips = _build_clips(args, review, start_time, match.duration)
             render_match_report(match.match_id, review.cards, review.deep_briefs,
                                 clips, args.out)
             print(f"обзор {len(review.cards)} эпизодов -> {args.out}/index.html")
@@ -179,7 +241,9 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--account-id", type=int, required=True, dest="account_id")
     a.add_argument("--video", default=None, help="mp4-запись матча — из неё берётся реальный кадр момента")
     a.add_argument("--video-offset", type=float, default=None, dest="video_offset",
-                   help="секунда записи, где игровое время = 0:00 (иначе OCR HUD-часов)")
+                   help="секунда записи, где игровое время = 0:00 (иначе авто по HUD-часам)")
+    a.add_argument("--gamerecordings", default=None,
+                   help="папка Steam gamerecordings — авто-поиск и сшивка записи матча")
     a.add_argument("--out", default="report.html")
     a.add_argument("--top-n", type=int, default=10, dest="top_n")
     a.add_argument("--coach", action="store_true", help="LLM-разбор фокус-момента")
