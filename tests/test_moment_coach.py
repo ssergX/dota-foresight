@@ -33,3 +33,15 @@ def test_explain_no_moments_returns_none_and_skips_llm():
     llm = FakeLLM(_CANNED)
     assert explain_moment([], llm) is None
     assert llm.calls == []
+
+
+def test_explain_scored_stamps_identity_from_given_moment():
+    from dota_coach.coach.moment_coach import explain_scored
+    ev = EventCandidate(type=EventType.DEATH, game_time=1234, involves_me=True,
+                        summary="", data={})
+    moment = ScoredMoment(event=ev, score=5.0, confidence=Confidence.LOW,
+                          verdict=Verdict.NEUTRAL)
+    brief = explain_scored(moment, FakeLLM(_CANNED))
+    assert brief.game_time == 1234
+    assert brief.verdict == "neutral"
+    assert brief.event_type == "death"
