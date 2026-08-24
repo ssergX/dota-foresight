@@ -16,6 +16,8 @@ def _impact(ev: EventCandidate) -> float:
         return 3.0
     if ev.type == EventType.ITEM_TIMING:
         return 1.5
+    if ev.type == EventType.DEATH:
+        return 2.5
     return 0.5  # ward, misc
 
 
@@ -37,6 +39,8 @@ def _score_one(ev: EventCandidate, weak_count: int) -> ScoredMoment:
         # lost fight, but no vision/positioning proof -> do NOT call it a mistake
         verdict = Verdict.NOT_ENOUGH_INFO
         reasons.append("слитая драка — нужен ручной разбор (нет данных о позиции/вижене)")
+    elif ev.type == EventType.DEATH:
+        reasons.append("твоя смерть")
 
     if weak_count and ev.type == EventType.ITEM_TIMING:
         reasons.append("на фоне слабых бенчмарков фарма")
