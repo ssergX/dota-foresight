@@ -20,12 +20,23 @@ def _episode(gt):
 
 def test_build_clips_extracts_per_episode(tmp_path, monkeypatch):
     calls = []
-    monkeypatch.setattr(cli, "clip_extract",
-                        lambda video, gt, off, out, ffmpeg: calls.append((gt, out)))
+
+    def fake_extract(video, gt, off, out, ffmpeg):
+        calls.append((gt, out))
+        open(out, "wb").write(b"x")   # клип реально создан -> ссылка встраивается
+
+    monkeypatch.setattr(cli, "clip_extract", fake_extract)
     review = MatchReview(episodes=[_episode(600), _episode(1200)], cards=[], deep_briefs={})
     clips = cli._build_clips(_Args(str(tmp_path)), review, start_time=None, duration=1800)
     assert clips == {600: "clips/00.mp4", 1200: "clips/01.mp4"}
     assert [c[0] for c in calls] == [600, 1200]
+
+
+def test_build_clips_skips_episode_when_ffmpeg_makes_no_file(tmp_path, monkeypatch):
+    # ffmpeg «молча» не создал файл -> ссылку в отчёт НЕ встраиваем
+    monkeypatch.setattr(cli, "clip_extract", lambda video, gt, off, out, ffmpeg: None)
+    review = MatchReview(episodes=[_episode(600)], cards=[], deep_briefs={})
+    assert cli._build_clips(_Args(str(tmp_path)), review, start_time=None, duration=1800) == {}
 
 
 def test_build_clips_empty_when_offset_unresolved(tmp_path, monkeypatch):

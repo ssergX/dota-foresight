@@ -75,18 +75,22 @@ def _ensure_video(args: argparse.Namespace, start_time, duration: int) -> str | 
         return args.video
     if not args.gamerecordings or start_time is None:
         return None
-    found = find_session(int(start_time), duration, args.gamerecordings)
-    if found is None:
-        print("запись матча в gamerecordings не найдена (буфер затёрт или другая сессия)")
+    try:
+        found = find_session(int(start_time), duration, args.gamerecordings)
+        if found is None:
+            print("запись матча в gamerecordings не найдена (буфер затёрт или другая сессия)")
+            return None
+        import imageio_ffmpeg
+        session_dir, avail = found
+        out_mp4 = str(Path(args.out) / "_match.mp4")
+        Path(args.out).mkdir(parents=True, exist_ok=True)
+        print("сшиваю окно матча из записи Steam...")
+        stitch_window(session_dir, avail, int(start_time), int(start_time) + duration,
+                      out_mp4, imageio_ffmpeg.get_ffmpeg_exe())
+        return out_mp4
+    except Exception as exc:  # noqa: BLE001 - видео необязательно, отчёт по данным всё равно рендерим
+        print(f"авто-сшивка записи не удалась ({exc}); задай --video вручную")
         return None
-    import imageio_ffmpeg
-    session_dir, avail = found
-    out_mp4 = str(Path(args.out) / "_match.mp4")
-    Path(args.out).mkdir(parents=True, exist_ok=True)
-    print("сшиваю окно матча из записи Steam...")
-    stitch_window(session_dir, avail, int(start_time), int(start_time) + duration,
-                  out_mp4, imageio_ffmpeg.get_ffmpeg_exe())
-    return out_mp4
 
 
 def _resolve_offset(args: argparse.Namespace, video: str) -> float | None:
@@ -123,11 +127,16 @@ def _build_clips(args: argparse.Namespace, review, start_time, duration: int) ->
     for i, e in enumerate(review.episodes):
         gt = e.moment.event.game_time
         rel = f"clips/{i:02d}.mp4"
+        dst = Path(args.out) / rel
         try:
-            clip_extract(video, gt, offset, str(Path(args.out) / rel), ffmpeg=ffmpeg)
-            out[gt] = rel
+            clip_extract(video, gt, offset, str(dst), ffmpeg=ffmpeg)
         except Exception as exc:  # noqa: BLE001 - клип необязателен
             print(f"клип {gt}s пропущен: {exc}")
+            continue
+        if dst.exists() and dst.stat().st_size > 0:   # не встраиваем ссылку на несозданный клип
+            out[gt] = rel
+        else:
+            print(f"клип {gt}s не создан (ffmpeg не дал файла)")
     return out
 
 

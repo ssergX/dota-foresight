@@ -23,8 +23,9 @@ def review_match(match: Match, parsed: ParsedReplay | None, account_id: int | No
     my_slot = slot_index(me.player_slot) if me else 0
     episodes = build_episodes(match, parsed, account_id)
     cards = [build_card(e, parsed, my_slot) for e in episodes]
+    info_by_time = {c.game_time: c.info for c in cards}
     deep_briefs: dict[int, MomentBrief] = {}
     for e in select_deep(episodes, min(deep_n, 2)):
-        info = build_card(e, parsed, my_slot).info
-        deep_briefs[e.moment.event.game_time] = explain_scored(e.moment, llm, info)
+        gt = e.moment.event.game_time
+        deep_briefs[gt] = explain_scored(e.moment, llm, info_by_time.get(gt))
     return MatchReview(episodes=episodes, cards=cards, deep_briefs=deep_briefs)
