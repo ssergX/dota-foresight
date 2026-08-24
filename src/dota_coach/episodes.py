@@ -8,6 +8,7 @@ from dota_coach.events import extract_events
 from dota_coach.models import (
     EventCandidate, EventType, Match, ParsedReplay, ScoredMoment,
 )
+from dota_coach.coach.moment_focus import VERDICT_RANK
 from dota_coach.scoring import score_events
 
 
@@ -72,3 +73,9 @@ def build_episodes(match: Match, parsed: ParsedReplay | None,
     episodes = [Episode(moment=m, severity=_severity(m, parsed, my_slot)) for m in moments]
     episodes.sort(key=lambda e: e.moment.event.game_time)
     return episodes
+
+
+def select_deep(episodes: list[Episode], n: int = 1) -> list[Episode]:
+    ranked = sorted(episodes, key=lambda e: (
+        VERDICT_RANK.get(e.moment.verdict, 9), -e.severity, e.moment.event.game_time))
+    return ranked[:max(0, n)]
