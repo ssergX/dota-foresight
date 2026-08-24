@@ -153,37 +153,40 @@ def render_coach_html(brief: CoachBrief, leaks: list[Leak], progress: ProgressNo
 </body></html>"""
 
 
-def _episode_card_html(card: EpisodeCard, brief, clip: str | None) -> str:
+def _episode_card_html(card: EpisodeCard, note, brief, clip: str | None) -> str:
     ts = _fmt_time(card.game_time)
     verdict = _VERDICT_RU.get(card.verdict.value, card.verdict.value)
     video = (f"<video src='{_html.escape(clip)}' controls width='720' "
              f"style='border-radius:8px;margin:6px 0;max-width:100%'></video>"
              if clip else "")
-    nums = ", ".join(f"{k}={v}" for k, v in card.numbers.items())
-    brief_html = ""
-    if brief is not None:
+    if brief is not None:   # полный разбор (острый эпизод)
         checklist = "\n".join(f"<li>{_html.escape(c)}</li>" for c in brief.checklist)
-        brief_html = (
+        insight = (
             f"<h4>{_html.escape(brief.headline)}</h4>"
             f"<p><b>Вероятно:</b> {_html.escape(brief.hypothesis)}</p>"
             f"<p><b>Спроси себя:</b> {_html.escape(brief.process_question)}</p>"
             f"<p><b>Проверь:</b></p><ul>{checklist}</ul>"
             f"<p class='reasons'>{_html.escape(brief.principle)}</p>")
+    elif note is not None:  # короткий тренерский комментарий
+        insight = (
+            f"<p>{_html.escape(note.situation)}</p>"
+            f"<p><b>Вывод:</b> {_html.escape(note.takeaway)}</p>")
+    else:
+        insight = ""
     return (
         f"<div class='card'>"
         f"<h3>{ts} <span class='meta'>[{verdict}]</span></h3>"
         f"{video}"
-        f"<p class='facts'>{_html.escape(card.facts)}</p>"
-        f"<p class='reasons'>{_html.escape(nums)}</p>"
-        f"{brief_html}"
+        f"{insight}"
         f"</div>")
 
 
-def render_match_report(match_id: int, cards: list[EpisodeCard],
+def render_match_report(match_id: int, cards: list[EpisodeCard], notes: dict,
                         deep_briefs: dict, clips: dict, out_dir: str) -> None:
     os.makedirs(os.path.join(out_dir, "clips"), exist_ok=True)
     body = "\n".join(
-        _episode_card_html(c, deep_briefs.get(c.game_time), clips.get(c.game_time))
+        _episode_card_html(c, notes.get(c.game_time), deep_briefs.get(c.game_time),
+                           clips.get(c.game_time))
         for c in cards)
     html = f"""<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">

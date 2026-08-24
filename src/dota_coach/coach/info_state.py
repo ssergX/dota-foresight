@@ -7,12 +7,17 @@
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from dota_coach.models import ParsedReplay
 
-DAY_VISION = 1800.0   # радиус обзора героя (дневной, приближение)
-OBS_VISION = 1600.0   # радиус обзора обсервер-варда
+DAY_VISION = 1800.0    # радиус обзора героя (дневной, приближение)
+OBS_VISION = 1600.0    # радиус обзора обсервер-варда
+NEARBY_RADIUS = 2500.0  # «рядом» — радиус боевого контакта (приближение)
+SPLIT_DIST = 3000.0    # ближайший союзник дальше -> ты оторван/один
+RIVER_BAND = 1500.0    # |x+y| меньше -> у реки/центр
+LOW_HP = 0.35          # доля HP, ниже которой враг «на добивании»
 
 
 @dataclass(frozen=True)
@@ -24,6 +29,8 @@ class EnemyInfo:
     alive: bool
     visible: bool
     missing_for: int   # секунд с момента, когда враг последний раз был виден (0 если виден сейчас)
+    hp_frac: float = 1.0   # доля HP (для «низкий HP» у видимых)
+    dist: float = 0.0      # расстояние до тебя (мировые ед.)
 
 
 @dataclass(frozen=True)
@@ -40,10 +47,61 @@ class InfoState:
     enemies: list[EnemyInfo]
     unseen_enemies: int    # сколько ЖИВЫХ врагов не видно сейчас
     max_missing_for: int   # самая долгая пропажа среди живых врагов
+    # --- ситуативный расклад (заземление для тренерского разбора) ---
+    allies_near: int = 0        # живых союзников рядом (радиус NEARBY_RADIUS), без тебя
+    nearest_ally_dist: float = 0.0
+    enemies_near: int = 0       # живых врагов рядом ФАКТИЧЕСКИ (ground truth, мог не знать)
+    enemies_near_visible: int = 0  # из них ты видел
+    zone: str = ""              # «на своей половине» | «у реки» | «на половине противника»
 
 
 def _hero(name: str) -> str:
-    return name[len("CDOTA_Unit_Hero_"):] if name.startswith("CDOTA_Unit_Hero_") else name
+    n = name[len("CDOTA_Unit_Hero_"):] if name.startswith("CDOTA_Unit_Hero_") else name
+    n = n.replace("_", " ")
+    n = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", n)   # StormSpirit -> Storm Spirit
+    return n.strip()
+
+
+def _zone(x: float, y: float, team: int) -> str:
+    s = x + y
+    own_sign = -1 if team == 2 else 1   # Radiant: своя половина при x+y<0
+    if abs(s) < RIVER_BAND:
+        return "у реки/центр"
+    return "на своей половине" if s * own_sign > 0 else "на половине противника"
+
+
+def render_grounding(info: "InfoState") -> str:
+    """Богатое заземление для тренерского разбора. Только факты; исхода матча нет.
+
+    Разделяем ЗНАЕМОЕ (вижн, свои союзники, своя позиция/ресурсы) и ФАКТ-для-контекста
+    (реальные позиции скрытых врагов — игрок мог не знать; не для обвинения задним числом).
+    """
+    pct = round(info.my_hp / info.my_max_hp * 100) if info.my_max_hp else 0
+    alive = [e for e in info.enemies if e.alive]
+    visible = [e for e in alive if e.visible]
+    unseen = sorted((e for e in alive if not e.visible), key=lambda e: -e.missing_for)
+    vis_names = ", ".join(_hero(e.hero) for e in visible) if visible else "никого"
+    low = [_hero(e.hero) for e in visible if e.hp_frac <= LOW_HP]
+    unseen_str = (", ".join(f"{_hero(e.hero)} ({e.missing_for}с)" for e in unseen)
+                  if unseen else "нет")
+    if info.allies_near:
+        allies_line = f"рядом союзников: {info.allies_near}"
+    elif info.nearest_ally_dist and info.nearest_ally_dist > SPLIT_DIST:
+        allies_line = "рядом союзников нет — ты оторван от команды"
+    else:
+        allies_line = "рядом союзников нет"
+    lines = [
+        "Заземление (из реплея; вижн — оценка радиусами):",
+        "ЗНАЕМОЕ (что ты мог видеть):",
+        f"- Твоё состояние: HP {info.my_hp}/{info.my_max_hp} ({pct}%), уровень {info.my_level}"
+        + ("" if info.my_alive else ", МЁРТВ") + ".",
+        f"- Позиция: {info.zone}; {allies_line}.",
+        f"- Видел врагов: {vis_names}" + (f" (низкий HP: {', '.join(low)})" if low else "")
+        + f". Не видел: {unseen_str}. В тумане живых: {info.unseen_enemies}.",
+        f"ФАКТ ДЛЯ КОНТЕКСТА (мог не знать): рядом с тобой было живых врагов "
+        f"{info.enemies_near} (из них видел {info.enemies_near_visible}).",
+    ]
+    return "\n".join(lines)
 
 
 def render_info_state(info: "InfoState") -> str:
@@ -120,9 +178,15 @@ def info_state_at(parsed: ParsedReplay, t: int, my_slot: int) -> InfoState | Non
             if _visible(u.x, u.y, ally_pos, obs):
                 last_seen[es] = f.time
 
+    me = frame_t.units.get(my_slot)
+    mx = me.x if me else 0.0
+    my = me.y if me else 0.0
+
     enemies: list[EnemyInfo] = []
     unseen = 0
     max_missing = 0
+    enemies_near = 0
+    enemies_near_visible = 0
     for es in enemy_slots:
         u = frame_t.units.get(es)
         if u is None:
@@ -130,20 +194,33 @@ def info_state_at(parsed: ParsedReplay, t: int, my_slot: int) -> InfoState | Non
         seen = last_seen[es]
         visible = seen == t
         missing_for = 0 if visible else (t - seen if seen is not None else t)
+        dist = _d2(mx, my, u.x, u.y) ** 0.5
         if u.alive and not visible:
             unseen += 1
             max_missing = max(max_missing, missing_for)
+        if u.alive and dist <= NEARBY_RADIUS:
+            enemies_near += 1
+            if visible:
+                enemies_near_visible += 1
         enemies.append(EnemyInfo(
             slot=es, hero=parsed.heroes.get(es, ""), x=u.x, y=u.y,
             alive=u.alive, visible=visible, missing_for=missing_for,
+            hp_frac=(u.hp / u.max_hp if u.max_hp else 1.0), dist=dist,
         ))
 
-    me = frame_t.units.get(my_slot)
+    ally_dists = [_d2(mx, my, frame_t.units[s].x, frame_t.units[s].y) ** 0.5
+                  for s in ally_slots
+                  if s != my_slot and s in frame_t.units and frame_t.units[s].alive]
+    allies_near = sum(1 for d in ally_dists if d <= NEARBY_RADIUS)
+    nearest_ally = min(ally_dists) if ally_dists else 0.0
+
     return InfoState(
-        time=t, my_slot=my_slot,
-        my_x=me.x if me else 0.0, my_y=me.y if me else 0.0,
+        time=t, my_slot=my_slot, my_x=mx, my_y=my,
         my_hp=me.hp if me else 0, my_max_hp=me.max_hp if me else 0,
         my_mana=me.mana if me else 0.0, my_level=me.level if me else 0,
         my_alive=me.alive if me else False,
         enemies=enemies, unseen_enemies=unseen, max_missing_for=max_missing,
+        allies_near=allies_near, nearest_ally_dist=nearest_ally,
+        enemies_near=enemies_near, enemies_near_visible=enemies_near_visible,
+        zone=_zone(mx, my, my_team),
     )

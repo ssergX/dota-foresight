@@ -27,12 +27,19 @@ def _replay():
                         frames=frames, teams={1: 2})
 
 
-def test_review_match_returns_cards_and_one_deep_brief():
+def test_review_match_returns_notes_for_all_and_one_deep_brief():
+    # canned несёт ключи и брифа, и комментария — FakeLLM отдаёт одно на все вызовы
     canned = json.dumps({"headline": "h", "hypothesis": "g", "process_question": "q",
-                         "checklist": ["c"], "principle": "p"})
+                         "checklist": ["c"], "principle": "p",
+                         "situation": "ситуация", "takeaway": "совет"})
     review = review_match(_match(), _replay(), account_id=7, llm=FakeLLM(canned), deep_n=1)
     assert isinstance(review, MatchReview)
-    assert len(review.cards) == len(review.episodes) >= 2
-    assert len(review.deep_briefs) == 1
-    # ключ deep_briefs — game_time одного из эпизодов
-    assert list(review.deep_briefs)[0] in [e.moment.event.game_time for e in review.episodes]
+    n = len(review.episodes)
+    assert len(review.cards) == n >= 2
+    assert len(review.deep_briefs) == 1                       # один острый — полный разбор
+    assert len(review.notes) == n - 1                         # остальные — комментарии
+    # каждый эпизод покрыт ровно одним: комментарий ИЛИ бриф
+    times = {e.moment.event.game_time for e in review.episodes}
+    assert set(review.notes) | set(review.deep_briefs) == times
+    assert not (set(review.notes) & set(review.deep_briefs))
+    assert list(review.notes.values())[0].takeaway == "совет"

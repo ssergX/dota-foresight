@@ -32,7 +32,8 @@ def test_analyze_coach_writes_folder_report(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "normalize", lambda raw: _match())
     monkeypatch.setattr(cli, "parse_replay", lambda mid: _replay())
     canned = json.dumps({"headline": "h", "hypothesis": "g", "process_question": "q",
-                         "checklist": ["c"], "principle": "p"})
+                         "checklist": ["c"], "principle": "p",
+                         "situation": "с", "takeaway": "т"})
     monkeypatch.setattr(cli, "make_llm", lambda provider: FakeLLM(canned))
     out = tmp_path / "review"
     rc = cli.main(["analyze", "--match-id", "1", "--account-id", "7",
