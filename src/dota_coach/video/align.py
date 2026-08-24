@@ -66,3 +66,88 @@ def tesseract_clock_ocr(frame) -> int | None:
     if not (mm.isdigit() and ss.isdigit()):
         return None
     return int(mm) * 60 + int(ss)
+
+
+# --- авто-выравнивание 0:00 по HUD-часам: шаблоны цифр + консенсус ---
+
+def _clock_binary(frame, box, thresh: int):
+    import cv2
+    if frame.ndim == 3:
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    h, w = frame.shape[:2]
+    x0, y0, x1, y1 = box
+    crop = frame[int(y0 * h):int(y1 * h), int(x0 * w):int(x1 * w)]
+    _, b = cv2.threshold(crop, thresh, 255, cv2.THRESH_BINARY)
+    return b
+
+
+def _segment_glyphs(binary, canon):
+    import cv2
+    import numpy as np
+    on = (binary > 0).sum(axis=0) > 1        # столбцы с >1 белым пикселем (двоеточие отсеивается)
+    groups = []
+    s = None
+    for i, v in enumerate(on):
+        if v and s is None:
+            s = i
+        elif not v and s is not None:
+            groups.append((s, i - 1))
+            s = None
+    if s is not None:
+        groups.append((s, len(on) - 1))
+    out = []
+    for a, b in groups:
+        sub = binary[:, a:b + 1]
+        rows = np.where(sub.sum(axis=1) > 0)[0]
+        if len(rows):
+            sub = sub[rows[0]:rows[-1] + 1, :]
+        out.append(cv2.resize(sub, tuple(canon), interpolation=cv2.INTER_NEAREST))
+    return out
+
+
+def load_clock_templates(assets_dir: str = "assets"):
+    import json
+    import os
+
+    import cv2
+
+    meta = json.load(open(os.path.join(assets_dir, "clock_box.json")))
+    tmpls = {}
+    for d in "0123456789":
+        p = os.path.join(assets_dir, "clock_digits", f"{d}.png")
+        if os.path.exists(p):
+            tmpls[d] = cv2.imread(p, cv2.IMREAD_GRAYSCALE)
+    return tmpls, meta
+
+
+def read_clock(frame, templates, meta) -> int | None:
+    """HUD-часы 'MM:SS'/'M:SS' -> секунды. None, если глифов не 3..5 (ночной мусор)."""
+    b = _clock_binary(frame, tuple(meta["box"]), int(meta["thresh"]))
+    glyphs = _segment_glyphs(b, tuple(meta["canon"]))
+    if not (3 <= len(glyphs) <= 5):
+        return None
+    ds = []
+    for g in glyphs:
+        best = max(templates, key=lambda d: (g == templates[d]).mean())
+        ds.append(best)
+    try:
+        return int("".join(ds[:-2])) * 60 + int(ds[-2]) * 10 + int(ds[-1])
+    except ValueError:
+        return None
+
+
+def auto_offset(read_at, coarse_seed: float, span: float = 900, step: float = 60,
+                min_votes: int = 3) -> float | None:
+    """offset (video-сек, где игровое 0:00) по консенсусу чтений часов. None, если нет кворума."""
+    from collections import Counter
+    votes: Counter = Counter()
+    t = coarse_seed
+    while t <= coarse_seed + span:
+        g = read_at(t)
+        if g is not None and g >= 0:
+            votes[round(t - g)] += 1
+        t += step
+    if not votes:
+        return None
+    off, n = votes.most_common(1)[0]
+    return float(off) if n >= min_votes else None
