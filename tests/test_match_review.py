@@ -43,3 +43,16 @@ def test_review_match_returns_notes_for_all_and_one_deep_brief():
     assert set(review.notes) | set(review.deep_briefs) == times
     assert not (set(review.notes) & set(review.deep_briefs))
     assert list(review.notes.values())[0].takeaway == "совет"
+
+
+def test_review_match_survives_malformed_llm_json():
+    # claude -p иногда отдаёт невалидный JSON (неэкранированная кавычка и т.п.);
+    # один кривой ответ не должен ронять весь разбор матча
+    class _BadLLM:
+        def complete(self, messages):
+            return '{"situation": "он сказал "ок" и зашёл", "takeaway": "x"}'   # невалидный JSON
+
+    review = review_match(_match(), _replay(), account_id=7, llm=_BadLLM(), deep_n=1)
+    assert isinstance(review, MatchReview)
+    assert len(review.episodes) >= 2                          # эпизоды построены
+    assert len(review.notes) == 0 and len(review.deep_briefs) == 0   # кривые ответы пропущены, не крэш

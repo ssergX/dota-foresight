@@ -19,6 +19,18 @@ class MatchReview:
     deep_briefs: dict[int, MomentBrief]  # game_time -> полный разбор (1-2 острых)
 
 
+def _try_llm(fn, *args):
+    """Ответ claude -p бывает кривым JSON (стохастичность, неэкранированные кавычки).
+    Один ретрай, затем мягко пропускаем эпизод — один плохой ответ не должен ронять
+    весь разбор матча (карточка+клип эпизода остаются, просто без текста)."""
+    for _ in range(2):
+        try:
+            return fn(*args)
+        except Exception:   # noqa: BLE001 - резилиентность: плохой ответ не валит прогон
+            continue
+    return None
+
+
 def review_match(match: Match, parsed: ParsedReplay | None, account_id: int | None,
                  llm: CoachLLM, deep_n: int = 1) -> MatchReview:
     me = match.player_by_account(account_id)
@@ -34,7 +46,11 @@ def review_match(match: Match, parsed: ParsedReplay | None, account_id: int | No
         gt = e.moment.event.game_time
         info = info_by_time.get(gt)
         if gt in deep_set:
-            deep_briefs[gt] = explain_scored(e.moment, llm, info)   # полный разбор
+            brief = _try_llm(explain_scored, e.moment, llm, info)   # полный разбор
+            if brief is not None:
+                deep_briefs[gt] = brief
         else:
-            notes[gt] = explain_note(e, info, llm)                  # короткий комментарий
+            note = _try_llm(explain_note, e, info, llm)             # короткий комментарий
+            if note is not None:
+                notes[gt] = note
     return MatchReview(episodes=episodes, cards=cards, notes=notes, deep_briefs=deep_briefs)
