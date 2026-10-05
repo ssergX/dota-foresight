@@ -144,7 +144,7 @@ def render_match_context(ctx: MomentContext) -> str:
     enemy_lost = ctx.dire_towers_lost if ctx.my_is_radiant else ctx.radiant_towers_lost
     map_line = (f"{'ночь' if ctx.is_night else 'день'} (прибл.), вышек пало — "
                 f"твоих {own_lost}, вражеских {enemy_lost}")
-    aegis = f", аегис у {ctx.aegis_side} стороны" if ctx.aegis_side else ""
+    aegis = f", аегис держит {ctx.aegis_side} сторона" if ctx.aegis_side else ""
     return (
         "Контекст матча (знаемо в моменте):\n"
         f"- Экономика: {econ}; {lvl}.\n"
