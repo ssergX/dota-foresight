@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from dota_coach.coach.episode_card import EpisodeCard, build_card
 from dota_coach.coach.episode_note import EpisodeNote, explain_note
 from dota_coach.coach.llm import CoachLLM
+from dota_coach.coach.match_context import match_context_at, render_match_context
 from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.coach.moment_coach import explain_scored
 from dota_coach.episodes import Episode, build_episodes, select_deep, slot_index
@@ -17,6 +18,7 @@ class MatchReview:
     cards: list[EpisodeCard]
     notes: dict[int, EpisodeNote]        # game_time -> короткий тренерский комментарий
     deep_briefs: dict[int, MomentBrief]  # game_time -> полный разбор (1-2 острых)
+    contexts: dict[int, str] = field(default_factory=dict)  # game_time -> факт-строка контекста
 
 
 def _try_llm(fn, *args):
@@ -40,17 +42,24 @@ def review_match(match: Match, parsed: ParsedReplay | None, account_id: int | No
     info_by_time = {c.game_time: c.info for c in cards}
     deep_set = {e.moment.event.game_time for e in select_deep(episodes, min(deep_n, 2))}
 
+    contexts: dict[int, str] = {}
     notes: dict[int, EpisodeNote] = {}
     deep_briefs: dict[int, MomentBrief] = {}
     for e in episodes:
         gt = e.moment.event.game_time
         info = info_by_time.get(gt)
+        block = ""
+        if me is not None:   # контекст матча (экономика/итемы/карта) — знаемо в моменте
+            dt = e.decision_time if e.decision_time is not None else gt
+            block = render_match_context(match_context_at(match, me, parsed, dt))
+            contexts[gt] = block
         if gt in deep_set:
-            brief = _try_llm(explain_scored, e.moment, llm, info)   # полный разбор
+            brief = _try_llm(explain_scored, e.moment, llm, info, block)   # полный разбор
             if brief is not None:
                 deep_briefs[gt] = brief
         else:
-            note = _try_llm(explain_note, e, info, llm)             # короткий комментарий
+            note = _try_llm(explain_note, e, info, llm, block)            # короткий комментарий
             if note is not None:
                 notes[gt] = note
-    return MatchReview(episodes=episodes, cards=cards, notes=notes, deep_briefs=deep_briefs)
+    return MatchReview(episodes=episodes, cards=cards, notes=notes,
+                       deep_briefs=deep_briefs, contexts=contexts)

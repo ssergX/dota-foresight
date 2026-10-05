@@ -10,10 +10,10 @@ from dota_coach.models import ScoredMoment
 
 
 def explain_scored(moment: ScoredMoment, llm: CoachLLM,
-                   info_state: InfoState | None = None) -> MomentBrief:
+                   info_state: InfoState | None = None, context: str = "") -> MomentBrief:
     principle = principle_for_moment(moment)
     info_block = render_knowable(info_state) if info_state is not None else ""
-    messages = build_moment_prompt(moment, principle, info_block)
+    messages = build_moment_prompt(moment, principle, info_block, context)
     brief = parse_moment_brief(llm.complete(messages))
     # идентичность момента ставит КОД (детерминизм + анти-результатничество):
     brief.game_time = moment.event.game_time
@@ -23,8 +23,8 @@ def explain_scored(moment: ScoredMoment, llm: CoachLLM,
 
 
 def explain_moment(moments: list[ScoredMoment], llm: CoachLLM,
-                   info_state: InfoState | None = None) -> MomentBrief | None:
+                   info_state: InfoState | None = None, context: str = "") -> MomentBrief | None:
     focus = select_focus_moment(moments)
     if focus is None:
         return None
-    return explain_scored(focus, llm, info_state)
+    return explain_scored(focus, llm, info_state, context)

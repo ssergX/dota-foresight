@@ -158,7 +158,7 @@ def _cmd_analyze(args: argparse.Namespace) -> int:
             start_time = raw.get("start_time") if isinstance(raw, dict) else None
             clips = _build_clips(args, review, start_time, match.duration)
             render_match_report(match.match_id, review.cards, review.notes,
-                                review.deep_briefs, clips, args.out)
+                                review.deep_briefs, clips, args.out, review.contexts)
             print(f"обзор {len(review.cards)} эпизодов -> {args.out}/index.html")
             return 0
         print("нет реплея — одиночный фокус-разбор по данным")

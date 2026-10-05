@@ -153,9 +153,10 @@ def render_coach_html(brief: CoachBrief, leaks: list[Leak], progress: ProgressNo
 </body></html>"""
 
 
-def _episode_card_html(card: EpisodeCard, note, brief, clip: str | None) -> str:
+def _episode_card_html(card: EpisodeCard, note, brief, clip: str | None, context: str = "") -> str:
     ts = _fmt_time(card.game_time)
     verdict = _VERDICT_RU.get(card.verdict.value, card.verdict.value)
+    ctx_html = f"<div class='facts meta'>{_html.escape(context)}</div>" if context else ""
     video = (f"<video src='{_html.escape(clip)}' controls width='720' "
              f"style='border-radius:8px;margin:6px 0;max-width:100%'></video>"
              if clip else "")
@@ -176,17 +177,20 @@ def _episode_card_html(card: EpisodeCard, note, brief, clip: str | None) -> str:
     return (
         f"<div class='card'>"
         f"<h3>{ts} <span class='meta'>[{verdict}]</span></h3>"
+        f"{ctx_html}"
         f"{video}"
         f"{insight}"
         f"</div>")
 
 
 def render_match_report(match_id: int, cards: list[EpisodeCard], notes: dict,
-                        deep_briefs: dict, clips: dict, out_dir: str) -> None:
+                        deep_briefs: dict, clips: dict, out_dir: str,
+                        contexts: dict | None = None) -> None:
+    contexts = contexts or {}
     os.makedirs(os.path.join(out_dir, "clips"), exist_ok=True)
     body = "\n".join(
         _episode_card_html(c, notes.get(c.game_time), deep_briefs.get(c.game_time),
-                           clips.get(c.game_time))
+                           clips.get(c.game_time), contexts.get(c.game_time, ""))
         for c in cards)
     html = f"""<!doctype html>
 <html lang="ru"><head><meta charset="utf-8">

@@ -46,13 +46,15 @@ class EpisodeNote:
     takeaway: str
 
 
-def build_note_prompt(episode: Episode, grounding: str) -> list[dict]:
+def build_note_prompt(episode: Episode, grounding: str, context: str = "") -> list[dict]:
     ev = episode.moment.event
     kind = _TYPE_RU.get(ev.type.value, ev.type.value)
     ts = f"{ev.game_time // 60}:{ev.game_time % 60:02d}"
+    ctx = f"{context}\n\n" if context else ""
     user = (
         f"Момент: {kind} на {ts}. {ev.summary}\n\n"
         f"{grounding}\n\n"
+        f"{ctx}"
         "Разбери строго в заданном JSON-формате."
     )
     return [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}]
@@ -66,7 +68,8 @@ def parse_note(raw: str | dict) -> EpisodeNote:
                        takeaway=str(data.get("takeaway", "")).strip())
 
 
-def explain_note(episode: Episode, info: InfoState | None, llm: CoachLLM) -> EpisodeNote:
+def explain_note(episode: Episode, info: InfoState | None, llm: CoachLLM,
+                 context: str = "") -> EpisodeNote:
     grounding = render_knowable(info) if info is not None else episode.moment.event.summary
-    messages = build_note_prompt(episode, grounding)
+    messages = build_note_prompt(episode, grounding, context)
     return parse_note(llm.complete(messages))

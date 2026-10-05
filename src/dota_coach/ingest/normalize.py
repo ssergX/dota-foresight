@@ -61,7 +61,8 @@ def normalize(raw: dict) -> Match:
         for t in (raw.get("teamfights") or [])
     ]
     objectives = [
-        Objective(time=o["time"], type=o["type"], slot=o.get("slot"), key=o.get("key"))
+        Objective(time=o["time"], type=o["type"], slot=o.get("slot"), key=o.get("key"),
+                  team=o.get("team"), player_slot=o.get("player_slot"), unit=o.get("unit"))
         for o in (raw.get("objectives") or [])
     ]
     return Match(

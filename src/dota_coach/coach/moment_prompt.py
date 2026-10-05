@@ -24,11 +24,13 @@ def _fmt_time(sec: int) -> str:
     return f"{sec // 60}:{sec % 60:02d}"
 
 
-def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = "") -> list[dict]:
+def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = "",
+                        context: str = "") -> list[dict]:
     ev = moment.event
     reasons = "; ".join(moment.reasons) or "(нет)"
     numbers = ", ".join(f"{k}={v}" for k, v in ev.data.items()) or "(нет)"
     knowable = f"\n{info_block}\n" if info_block else ""
+    ctx = f"{context}\n" if context else ""
     guidance = (
         "Разбери этот момент строго в заданном JSON-формате."
         if not info_block else
@@ -44,6 +46,7 @@ def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = 
         f"- причины разметки: {reasons}\n"
         f"- числа: {numbers}\n"
         f"{knowable}\n"
+        f"{ctx}"
         f"Тренерский принцип для момента этого типа:\n{principle}\n\n"
         f"{guidance}"
     )

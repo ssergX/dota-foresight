@@ -90,6 +90,9 @@ class Objective:
     type: str
     slot: int | None = None
     key: str | None = None
+    team: int | None = None          # 2 Radiant / 3 Dire (напр. сторона убийцы Рошана)
+    player_slot: int | None = None
+    unit: str | None = None          # кто снёс (герой/крип) для building_kill
 
 
 @dataclass(frozen=True)
