@@ -34,3 +34,11 @@ def test_build_card_without_replay_falls_back_to_summary():
     card = build_card(_episode(), None, my_slot=1)
     assert card.info is None
     assert card.facts == "твоя смерть на 10:00"
+
+
+def test_build_card_grounds_at_decision_time():
+    ep = _episode(game_time=600)
+    ep.decision_time = 580                       # точка решения раньше смерти
+    card = build_card(ep, _replay(), my_slot=1)
+    assert card.game_time == 600                 # таймстамп/клип остаются на моменте смерти
+    assert card.info is not None and card.info.time == 580   # разбор грунтится в точке решения

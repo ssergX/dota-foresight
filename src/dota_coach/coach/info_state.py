@@ -70,11 +70,11 @@ def _zone(x: float, y: float, team: int) -> str:
     return "на своей половине" if s * own_sign > 0 else "на половине противника"
 
 
-def render_grounding(info: "InfoState") -> str:
-    """Богатое заземление для тренерского разбора. Только факты; исхода матча нет.
-
-    Разделяем ЗНАЕМОЕ (вижн, свои союзники, своя позиция/ресурсы) и ФАКТ-для-контекста
-    (реальные позиции скрытых врагов — игрок мог не знать; не для обвинения задним числом).
+def render_knowable(info: "InfoState") -> str:
+    """Заземление ТОЛЬКО из знаемого игроком в точке решения: вижн, свои союзники, своя
+    позиция/ресурсы. Ground-truth о скрытых врагах (enemies_near — реально рядом, в т.ч.
+    невидимые) сюда НЕ ПОПАДАЕТ: анти-хиндсайт гарантируется на уровне данных, а не просьбой
+    в промпте. Это вход для ОЦЕНКИ РЕШЕНИЯ (решение судим по тому, что было видно).
     """
     pct = round(info.my_hp / info.my_max_hp * 100) if info.my_max_hp else 0
     alive = [e for e in info.enemies if e.alive]
@@ -91,15 +91,12 @@ def render_grounding(info: "InfoState") -> str:
     else:
         allies_line = "рядом союзников нет"
     lines = [
-        "Заземление (из реплея; вижн — оценка радиусами):",
-        "ЗНАЕМОЕ (что ты мог видеть):",
+        "Что было знаемо в точке решения (из реплея; вижн — оценка радиусами):",
         f"- Твоё состояние: HP {info.my_hp}/{info.my_max_hp} ({pct}%), уровень {info.my_level}"
         + ("" if info.my_alive else ", МЁРТВ") + ".",
         f"- Позиция: {info.zone}; {allies_line}.",
         f"- Видел врагов: {vis_names}" + (f" (низкий HP: {', '.join(low)})" if low else "")
         + f". Не видел: {unseen_str}. В тумане живых: {info.unseen_enemies}.",
-        f"ФАКТ ДЛЯ КОНТЕКСТА (мог не знать): рядом с тобой было живых врагов "
-        f"{info.enemies_near} (из них видел {info.enemies_near_visible}).",
     ]
     return "\n".join(lines)
 

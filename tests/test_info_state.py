@@ -58,3 +58,24 @@ def test_dead_enemy_not_counted_visible():
     s = info_state_at(r, 0, my_slot=0)
     assert s.enemies[0].alive is False
     assert s.unseen_enemies == 0                     # мёртвых не считаем «пропавшими»
+
+
+def test_render_knowable_omits_hidden_ground_truth():
+    # заземление для ОЦЕНКИ РЕШЕНИЯ не должно зависеть от ground-truth о скрытых врагах
+    # (enemies_near) — это анти-хиндсайт на уровне данных, а не просьбы в промпте
+    from dataclasses import replace
+
+    from dota_coach.coach.info_state import EnemyInfo, InfoState, render_knowable
+
+    base = InfoState(
+        time=600, my_slot=0, my_x=0.0, my_y=0.0, my_hp=500, my_max_hp=1000,
+        my_mana=100.0, my_level=9, my_alive=True,
+        enemies=[EnemyInfo(5, "CDOTA_Unit_Hero_Pudge", 9000, 9000, True, False, 40)],
+        unseen_enemies=1, max_missing_for=40,
+        allies_near=0, nearest_ally_dist=5000.0, enemies_near=0, enemies_near_visible=0,
+        zone="на половине противника",
+    )
+    leaky = replace(base, enemies_near=3, enemies_near_visible=0)   # 3 скрытых реально рядом
+    assert render_knowable(base) == render_knowable(leaky)
+    txt = render_knowable(base)
+    assert "HP 500/1000" in txt and "на половине противника" in txt   # знаемое на месте

@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
-from dota_coach.coach.info_state import InfoState, render_grounding
+from dota_coach.coach.info_state import InfoState, render_knowable
 from dota_coach.coach.llm import CoachLLM
 from dota_coach.coach.moment_brief import _strip_code_fence
 from dota_coach.episodes import Episode
@@ -28,9 +28,9 @@ _SYSTEM = (
     "1. Судишь по тому, что игрок МОГ ЗНАТЬ (вижн, свои союзники, своя позиция/ресурсы), "
     "НИКОГДА по исходу матча. Побед/поражений тебе не дают — не рассуждай о них. Размены "
     "описывай нейтрально (зашёл с информацией/вслепую, в большинстве/меньшинстве).\n"
-    "2. Блок ЗНАЕМОЕ — факты, доступные игроку. Блок «ФАКТ ДЛЯ КОНТЕКСТА» (реальные "
-    "позиции скрытых врагов) игрок мог НЕ знать: используй, чтобы точнее описать ситуацию, "
-    "но НЕ вини за незнание — если важно, скажи, что стоило заподозрить/проверить.\n"
+    "2. Тебе дают ТОЛЬКО то, что игрок мог знать в точке решения (вижн, свои союзники, "
+    "позиция, ресурсы). Чего он не видел — ты тоже не знаешь: не выдумывай, где стояли "
+    "скрытые враги; если это важно, скажи, что стоило заподозрить/проверить.\n"
     "3. Геймплей ты не видел — вывод это ГИПОТЕЗА («вероятно…»). Дай КОНКРЕТНЫЙ совет под "
     "эту ситуацию. Общие фразы («играй аккуратнее», «улучшай позиционку», «фарми лучше») "
     "ЗАПРЕЩЕНЫ — совет должен цепляться за факты момента (позицию, вижн, расклад).\n"
@@ -67,6 +67,6 @@ def parse_note(raw: str | dict) -> EpisodeNote:
 
 
 def explain_note(episode: Episode, info: InfoState | None, llm: CoachLLM) -> EpisodeNote:
-    grounding = render_grounding(info) if info is not None else episode.moment.event.summary
+    grounding = render_knowable(info) if info is not None else episode.moment.event.summary
     messages = build_note_prompt(episode, grounding)
     return parse_note(llm.complete(messages))

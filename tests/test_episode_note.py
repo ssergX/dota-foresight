@@ -43,11 +43,29 @@ def test_explain_note_returns_situation_and_takeaway():
 
 
 def test_note_prompt_carries_no_outcome():
-    from dota_coach.coach.info_state import render_grounding
+    from dota_coach.coach.info_state import render_knowable
     banned_tokens = ("radiant_win", "radiant_score", "dire_score")
     banned_words = ("победа", "поражени", "выигр", "проигр")
-    msgs = build_note_prompt(_episode(), render_grounding(_info()))
+    msgs = build_note_prompt(_episode(), render_knowable(_info()))
     whole = "".join(m["content"] for m in msgs).lower()
     assert not any(t in whole for t in banned_tokens)
     user = msgs[1]["content"].lower()          # system легитимно несёт анти-результат-инструкцию
     assert not any(w in user for w in banned_words)
+
+
+def test_explain_note_does_not_leak_hidden_ground_truth():
+    # enemies_near=3 (реально рядом 3 скрытых) — ground truth, игрок мог не знать;
+    # в промпт ОЦЕНКИ РЕШЕНИЯ это попадать не должно
+    info = InfoState(
+        time=600, my_slot=1, my_x=0.0, my_y=0.0, my_hp=800, my_max_hp=1000,
+        my_mana=200.0, my_level=9, my_alive=True,
+        enemies=[EnemyInfo(6, "CDOTA_Unit_Hero_Pudge", 9000, 9000, True, False, 40)],
+        unseen_enemies=1, max_missing_for=40,
+        allies_near=0, nearest_ally_dist=5000.0, enemies_near=3, enemies_near_visible=0,
+        zone="на половине противника",
+    )
+    llm = FakeLLM(json.dumps({"situation": "s", "takeaway": "t"}))
+    explain_note(_episode(), info, llm)
+    prompt = "".join(m["content"] for m in llm.calls[0])
+    assert "ФАКТ ДЛЯ КОНТЕКСТА" not in prompt
+    assert "на самом деле" not in prompt.lower()

@@ -32,9 +32,11 @@ def _score_one(ev: EventCandidate, weak_count: int) -> ScoredMoment:
     confidence = Confidence.LOW
 
     if ev.type == EventType.NETWORTH_SWING:
-        verdict = Verdict.MISTAKE
-        confidence = Confidence.HIGH
-        reasons.append("измеримая просадка нетворса")
+        # просадка нетворса — это СЛЕДСТВИЕ, а не доказанное решение: без данных о цели
+        # действия / созданном пространстве / альтернативах не клеймим ошибкой (как и слитую
+        # драку ниже). Остаётся сигналом-маркером времени для ручного разбора.
+        verdict = Verdict.NOT_ENOUGH_INFO
+        reasons.append("измеримая просадка нетворса — следствие, нужен ручной разбор")
     elif ev.type == EventType.TEAMFIGHT and ev.data.get("my_gold_delta", 0) < 0:
         # lost fight, but no vision/positioning proof -> do NOT call it a mistake
         verdict = Verdict.NOT_ENOUGH_INFO

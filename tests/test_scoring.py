@@ -5,7 +5,7 @@ from dota_coach.benchmarks import player_benchmarks
 from dota_coach.events import extract_events
 from dota_coach.ingest.normalize import normalize
 from dota_coach.models import Confidence, EventCandidate, EventType, Verdict
-from dota_coach.scoring import score_events
+from dota_coach.scoring import _score_one, score_events
 
 FIXTURE = Path(__file__).parent / "fixtures" / "opendota_match_sample.json"
 
@@ -63,3 +63,12 @@ def test_dedup_drops_non_teamfight_events_within_20s_of_a_teamfight():
     assert "far" in summaries
     assert "near" not in summaries
     assert "boundary" not in summaries
+
+
+def test_networth_swing_is_not_auto_mistake():
+    # просадка нетворса — это РЕЗУЛЬТАТ, не доказанное решение; не клеймить ошибкой
+    ev = EventCandidate(type=EventType.NETWORTH_SWING, game_time=500, involves_me=True,
+                        summary="просадка золота", data={"delta": -650})
+    m = _score_one(ev, weak_count=0)
+    assert m.verdict == Verdict.NOT_ENOUGH_INFO
+    assert m.confidence == Confidence.LOW

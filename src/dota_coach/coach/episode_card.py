@@ -18,7 +18,9 @@ class EpisodeCard:
 
 def build_card(episode: Episode, parsed: ParsedReplay | None, my_slot: int) -> EpisodeCard:
     ev = episode.moment.event
-    info = info_state_at(parsed, ev.game_time, my_slot) if parsed is not None else None
+    # разбор грунтим в ТОЧКЕ РЕШЕНИЯ; таймстамп карточки/клипа остаётся на ev.game_time
+    t = episode.decision_time if episode.decision_time is not None else ev.game_time
+    info = info_state_at(parsed, t, my_slot) if parsed is not None else None
     facts = render_info_state(info) if info is not None else ev.summary
     return EpisodeCard(game_time=ev.game_time, verdict=episode.moment.verdict,
                        facts=facts, numbers=dict(ev.data), info=info)

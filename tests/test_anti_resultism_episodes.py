@@ -48,14 +48,14 @@ def test_every_note_prompt_carries_no_outcome():
     # короткий комментарий гоняется на КАЖДЫЙ эпизод -> сканируем все его промпты
     from dota_coach.coach.episode_card import build_card
     from dota_coach.coach.episode_note import build_note_prompt
-    from dota_coach.coach.info_state import render_grounding
+    from dota_coach.coach.info_state import render_knowable
     from dota_coach.episodes import slot_index
 
     match, replay = _match(), _replay()
     my_slot = slot_index(match.player_by_account(7).player_slot)
     for e in build_episodes(match, replay, 7):
         info = build_card(e, replay, my_slot).info
-        grounding = render_grounding(info) if info is not None else ""
+        grounding = render_knowable(info) if info is not None else ""
         msgs = build_note_prompt(e, grounding)
         whole = "".join(m["content"] for m in msgs).lower()
         assert not any(t in whole for t in _BANNED_TOKENS)
@@ -69,7 +69,7 @@ def test_every_deep_prompt_carries_no_outcome():
     # как в test_anti_resultism_moment.py. Сканируем ИМЕННО тот промпт, что уходит в LLM —
     # с инфо-блоком реплея (render_info_state), т.к. это единственный динамический текст.
     from dota_coach.coach.episode_card import build_card
-    from dota_coach.coach.info_state import render_grounding
+    from dota_coach.coach.info_state import render_knowable
     from dota_coach.episodes import slot_index
 
     match, replay = _match(), _replay()
@@ -77,7 +77,7 @@ def test_every_deep_prompt_carries_no_outcome():
     episodes = build_episodes(match, replay, 7)
     for e in episodes:
         info = build_card(e, replay, my_slot).info
-        info_block = render_grounding(info) if info is not None else ""
+        info_block = render_knowable(info) if info is not None else ""
         msgs = build_moment_prompt(e.moment, principle_for_moment(e.moment), info_block)
         whole = "".join(m["content"] for m in msgs).lower()
         assert not any(t in whole for t in _BANNED_TOKENS)

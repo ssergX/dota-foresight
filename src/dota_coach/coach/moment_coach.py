@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dota_coach.coach.info_state import InfoState, render_grounding
+from dota_coach.coach.info_state import InfoState, render_knowable
 from dota_coach.coach.llm import CoachLLM
 from dota_coach.coach.moment_brief import MomentBrief, parse_moment_brief
 from dota_coach.coach.moment_focus import select_focus_moment
@@ -12,7 +12,7 @@ from dota_coach.models import ScoredMoment
 def explain_scored(moment: ScoredMoment, llm: CoachLLM,
                    info_state: InfoState | None = None) -> MomentBrief:
     principle = principle_for_moment(moment)
-    info_block = render_grounding(info_state) if info_state is not None else ""
+    info_block = render_knowable(info_state) if info_state is not None else ""
     messages = build_moment_prompt(moment, principle, info_block)
     brief = parse_moment_brief(llm.complete(messages))
     # идентичность момента ставит КОД (детерминизм + анти-результатничество):

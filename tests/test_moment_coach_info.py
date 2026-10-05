@@ -63,3 +63,16 @@ def test_explain_moment_without_info_still_works():
     b = explain_moment([_moment()], llm)   # без info_state — прежнее поведение
     assert b.headline == "h"
     assert "что было знаемо" not in "".join(m["content"] for m in llm.calls[0]).lower()
+
+
+def test_deep_prompt_does_not_leak_hidden_ground_truth():
+    # глубокий разбор тоже не должен получать ground-truth о скрытых врагах
+    from dataclasses import replace
+
+    from dota_coach.coach.moment_coach import explain_scored
+
+    info3 = replace(_info(), enemies_near=3, enemies_near_visible=0)
+    llm = FakeLLM(_CANNED)
+    explain_scored(_moment(), llm, info_state=info3)
+    prompt = "".join(m["content"] for m in llm.calls[0])
+    assert "ФАКТ ДЛЯ КОНТЕКСТА" not in prompt
