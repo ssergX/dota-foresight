@@ -17,6 +17,8 @@ from dota_coach.episodes import Episode
 _TYPE_RU = {
     "teamfight": "тимфайт",
     "death": "твоя смерть",
+    "pickoff": "твой пикофф",
+    "objective": "объектив",
     "networth_swing": "просадка золота",
 }
 

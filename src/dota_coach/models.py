@@ -7,6 +7,7 @@ from enum import Enum
 class EventType(str, Enum):
     TEAMFIGHT = "teamfight"
     DEATH = "death"
+    PICKOFF = "pickoff"
     OBJECTIVE = "objective"
     NETWORTH_SWING = "networth_swing"
     ITEM_TIMING = "item_timing"

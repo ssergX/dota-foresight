@@ -14,6 +14,8 @@ def _impact(ev: EventCandidate) -> float:
         return abs(ev.data.get("delta", 0)) / 100.0
     if ev.type == EventType.OBJECTIVE:
         return 3.0
+    if ev.type == EventType.PICKOFF:
+        return 2.0
     if ev.type == EventType.ITEM_TIMING:
         return 1.5
     if ev.type == EventType.DEATH:
@@ -43,6 +45,10 @@ def _score_one(ev: EventCandidate, weak_count: int) -> ScoredMoment:
         reasons.append("слитая драка — нужен ручной разбор (нет данных о позиции/вижене)")
     elif ev.type == EventType.DEATH:
         reasons.append("твоя смерть")
+    elif ev.type == EventType.PICKOFF:
+        reasons.append("твой пикофф вне драки")
+    elif ev.type == EventType.OBJECTIVE:
+        reasons.append("объектив с твоим участием")
 
     if weak_count and ev.type == EventType.ITEM_TIMING:
         reasons.append("на фоне слабых бенчмарков фарма")

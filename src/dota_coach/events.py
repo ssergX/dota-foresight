@@ -37,15 +37,35 @@ def _slot_index(player_slot: int) -> int:
     return player_slot if player_slot < 128 else player_slot - 123
 
 
+def _building_ru(key: str | None) -> str:
+    key = key or ""
+    if "fort" in key:
+        return "трон"
+    if "tower4" in key:
+        return "вышку T4"
+    lane = ("топ" if "_top" in key else "мид" if "_mid" in key else "бот" if "_bot" in key else "")
+    for tier in ("1", "2", "3"):
+        if f"tower{tier}" in key:
+            return f"вышку T{tier} {lane}".strip()
+    if "rax" in key:
+        kind = "дальние" if "range" in key else "ближние"
+        return f"казармы {kind} {lane}".strip()
+    return "строение"
+
+
 def _objective_events(match: Match, me: PlayerMatch) -> list[EventCandidate]:
     out: list[EventCandidate] = []
     for o in match.objectives:
+        mine = (o.slot is not None and o.slot in (me.player_slot, _slot_index(me.player_slot)))
+        if o.type == "building_kill":
+            who = "ты снёс" if mine else "пало строение"
+            summary = (f"{who} {_building_ru(o.key)}" if mine
+                       else f"пало {_building_ru(o.key)}") + f" на {o.time // 60}:{o.time % 60:02d}"
+        else:
+            summary = f"{o.type} на {o.time // 60}:{o.time % 60:02d}"
         out.append(EventCandidate(
-            type=EventType.OBJECTIVE, game_time=o.time,
-            involves_me=(o.slot is not None
-                         and o.slot in (me.player_slot, _slot_index(me.player_slot))),
-            summary=f"{o.type} на {o.time // 60}:{o.time % 60:02d}",
-            data={"objective_type": o.type},
+            type=EventType.OBJECTIVE, game_time=o.time, involves_me=mine,
+            summary=summary, data={"objective_type": o.type, "building": o.key},
         ))
     return out
 

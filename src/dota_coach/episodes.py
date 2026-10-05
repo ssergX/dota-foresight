@@ -6,7 +6,7 @@ from dota_coach.benchmarks import player_benchmarks
 from dota_coach.coach.info_state import info_state_at
 from dota_coach.events import extract_events
 from dota_coach.models import (
-    EventCandidate, EventType, Match, ParsedReplay, ScoredMoment,
+    EventCandidate, EventType, Match, ParsedReplay, PlayerMatch, ScoredMoment,
 )
 from dota_coach.coach.moment_focus import VERDICT_RANK
 from dota_coach.scoring import score_events
@@ -48,8 +48,24 @@ def _death_events(parsed: ParsedReplay, my_slot: int, teamfights) -> list[EventC
     return out
 
 
+def _pickoff_events(me: PlayerMatch, teamfights) -> list[EventCandidate]:
+    """Твои убийства ВНЕ драк — пикоффы (позитивные моменты: не только ошибки)."""
+    out: list[EventCandidate] = []
+    for k in me.kills_log:
+        t = k.get("time")
+        if t is None or any(tf.start - 5 <= t <= tf.end + 5 for tf in teamfights):
+            continue  # убийство внутри драки — часть тимфайта
+        victim = (k.get("key", "") or "").replace("npc_dota_hero_", "").replace("_", " ")
+        out.append(EventCandidate(
+            type=EventType.PICKOFF, game_time=t, involves_me=True,
+            summary=f"твой пикофф ({victim}) на {t // 60}:{t % 60:02d}",
+            data={"victim": victim}))
+    return out
+
+
 _DECISION_WINDOW = 30   # сек назад от смерти, где ищем точку решения
 _SAFE_HP_FRAC = 0.85    # «ещё в безопасности» — доля HP выше этой
+_MAX_EPISODES = 25      # кэп эпизодов на матч (важнейшие по severity), чтобы не заваливать
 
 
 def _decision_time(parsed: ParsedReplay | None, my_slot: int, ev: EventCandidate) -> int:
@@ -100,7 +116,10 @@ def build_episodes(match: Match, parsed: ParsedReplay | None,
         return []
     my_slot = slot_index(me.player_slot)
     base = [e for e in extract_events(match, account_id)
-            if e.type in (EventType.TEAMFIGHT, EventType.NETWORTH_SWING)]
+            if e.type in (EventType.TEAMFIGHT, EventType.NETWORTH_SWING)
+            or (e.type == EventType.OBJECTIVE and e.involves_me
+                and e.data.get("objective_type") == "building_kill")]
+    base += _pickoff_events(me, match.teamfights)
     if parsed is not None:
         base += _death_events(parsed, my_slot, match.teamfights)
     benches = player_benchmarks(match, account_id)
@@ -110,6 +129,9 @@ def build_episodes(match: Match, parsed: ParsedReplay | None,
         dt = _decision_time(parsed, my_slot, m.event)
         episodes.append(Episode(moment=m, severity=_severity(m, parsed, my_slot, dt),
                                 decision_time=dt))
+    # кэп по важности, затем хронологически — не заваливаем десятками минорных пикоффов
+    episodes.sort(key=lambda e: e.severity, reverse=True)
+    episodes = episodes[:_MAX_EPISODES]
     episodes.sort(key=lambda e: e.moment.event.game_time)
     return episodes
 
