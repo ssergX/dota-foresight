@@ -25,7 +25,8 @@ def test_coach_report_shows_headline_drills_and_progress():
     assert "Тебя топит вижн" in html
     assert "ставь обс на руну" in html
     assert "варды p1 → p3 — прогресс" in html
-    assert "Мало вардов" in html
+    assert "obs_per_game" in html
+    assert "Что измерено" in html and "Ограничения" in html
 
 
 def test_coach_report_escapes_html():
@@ -64,5 +65,5 @@ def test_render_shows_also_visible_and_coverage():
                  sample_size=6, considered=11)]
     html = render_coach_html(brief, [focus, *also], also_visible=also)
     assert "тоже видно" in html.lower()
-    assert "Мало обсов" in html
+    assert "low_obs" in html
     assert "8 из 11" in html   # строка покрытия по лику-фокусу (правило деградации №5 спеки)

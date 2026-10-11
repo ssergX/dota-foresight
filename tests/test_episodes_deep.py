@@ -17,7 +17,7 @@ def test_select_deep_picks_highest_severity_first():
     assert [e.moment.event.game_time for e in top] == [200]
 
 
-def test_select_deep_prefers_mistake_verdict_over_neutral():
+def test_select_deep_does_not_prefer_unvalidated_mistake_label():
     eps = [_ep(100, 9.0, Verdict.NEUTRAL), _ep(200, 1.0, Verdict.MISTAKE)]
     top = select_deep(eps, n=1)
-    assert top[0].moment.event.game_time == 200   # mistake ранжируется выше
+    assert top[0].moment.event.game_time == 100

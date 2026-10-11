@@ -43,7 +43,7 @@ def _building_ru(key: str | None) -> str:
         return "трон"
     if "tower4" in key:
         return "вышку T4"
-    lane = ("топ" if "_top" in key else "мид" if "_mid" in key else "бот" if "_bot" in key else "")
+    lane = "топ" if "_top" in key else "мид" if "_mid" in key else "бот" if "_bot" in key else ""
     for tier in ("1", "2", "3"):
         if f"tower{tier}" in key:
             return f"вышку T{tier} {lane}".strip()
@@ -56,16 +56,21 @@ def _building_ru(key: str | None) -> str:
 def _objective_events(match: Match, me: PlayerMatch) -> list[EventCandidate]:
     out: list[EventCandidate] = []
     for o in match.objectives:
-        mine = (o.slot is not None and o.slot in (me.player_slot, _slot_index(me.player_slot)))
+        # Explicit player_slot is authoritative when supplied. The legacy `slot`
+        # field can instead contain the provider's 0..9 player index.
+        actor_slot = getattr(o, "player_slot", None)
+        mine = (actor_slot == me.player_slot if actor_slot is not None else
+                o.slot is not None and o.slot in (me.player_slot, _slot_index(me.player_slot)))
         if o.type == "building_kill":
-            who = "ты снёс" if mine else "пало строение"
-            summary = (f"{who} {_building_ru(o.key)}" if mine
-                       else f"пало {_building_ru(o.key)}") + f" на {o.time // 60}:{o.time % 60:02d}"
+            building = _building_ru(o.key)
+            summary = (f"ты снёс {building}" if mine else f"пало {building}")
+            summary += f" на {o.time // 60}:{o.time % 60:02d}"
         else:
             summary = f"{o.type} на {o.time // 60}:{o.time % 60:02d}"
         out.append(EventCandidate(
             type=EventType.OBJECTIVE, game_time=o.time, involves_me=mine,
-            summary=summary, data={"objective_type": o.type, "building": o.key},
+            summary=summary,
+            data={"objective_type": o.type, "building": o.key},
         ))
     return out
 

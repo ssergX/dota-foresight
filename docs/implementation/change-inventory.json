@@ -1,0 +1,400 @@
+{
+  "scope": "local SHA inventory; no Git revision or ownership of pre-existing untracked files claimed",
+  "generated_at": "2026-10-09T12:05:04.153880+00:00",
+  "baseline_file_count": 111,
+  "changed_from_baseline": {
+    "replay_tool/main.go": {
+      "before": "1e2c608567e8a1c774e0b429282d3d67b79f44cd09e2c86ebc839367b8bf60a2",
+      "after": "9f2739c2db40ccf173c5d7e2d288c69240dabf6f55bcc0338f3e486aa8a51393"
+    },
+    "src/dota_coach/benchmarks.py": {
+      "before": "b38c17d5c8368bd4c5c4f6b8ea01325f73ed38b1221a28cd6b37cf11f936310b",
+      "after": "6ce076bc16b72cac35e9aeff5e7339bd5d0e672124a7a30b0aa6e79fe52869e0"
+    },
+    "src/dota_coach/cli.py": {
+      "before": "5af8f78fda766e481fa8194a3f098f716b7e19b93d29b245298ca4fa1dd63ff5",
+      "after": "2839fd5d54049a2296ec7561fcbf2ddc957e4a0e0ef53d9cf31d2a8115d08c0f"
+    },
+    "src/dota_coach/coach/brief.py": {
+      "before": "da3c66b736b2ed52e98701bf4ca2a633246e0e7cb218824142b6cc6734c55d20",
+      "after": "c9cff3af748357b60ba3c7d752d2268ef6dc71aeb13cfeb3bbb3b807d7183e49"
+    },
+    "src/dota_coach/coach/coach.py": {
+      "before": "f09674718c1d70d8fb366a9c1b061dfbc5fa04c89a4f9b65ec2ee61e7b0ae7aa",
+      "after": "c640855dd59a3887370dc23f1254beddaa93a1d7993a2ca158d7bb8253a8904e"
+    },
+    "src/dota_coach/coach/episode_card.py": {
+      "before": "db87eccfb3f2236d97e68a0af36ce8be433ec8e24e5ddd37b0f870bb73805fc6",
+      "after": "1a13893d88a15bec004bb2dad42f7ad7602a49ae2c30a388eb5b55cd06f3d5a3"
+    },
+    "src/dota_coach/coach/episode_note.py": {
+      "before": "309ea952f47cdcb4ff0944ff948f0b7a666ad43d25f46ef7e67d127426a544dc",
+      "after": "d33f4875ba8588e6af1d4dc1990c234ddba160f100d23bbb5139856df440a723"
+    },
+    "src/dota_coach/coach/history.py": {
+      "before": "d955bca1853de8fa95ae902489bb999ba045faca7c8c261c8fd5ed47083e9017",
+      "after": "05d0a215ade4dd285c1aaf2f2b2de7a1639c2db7b24af03f94baeb006a1d8a26"
+    },
+    "src/dota_coach/coach/info_state.py": {
+      "before": "21a8ffd07102b0ff34adbd8695fad6f5949047f169496c32540b8f4c33331c8b",
+      "after": "dc0bd2b630e07424e2695a267e0a7d2b601f7617d7e69179ed5dab177e73d36d"
+    },
+    "src/dota_coach/coach/match_review.py": {
+      "before": "4909c0a1da48057de6f9e2a810b26c1fc40ecb4615812febd3aee7e1177f0390",
+      "after": "0fc9541c90636ed8ceaca0dee1da8beae4e2eb7f6bd63b7fd16ee21d9239e3a1"
+    },
+    "src/dota_coach/coach/moment_coach.py": {
+      "before": "134abf0eacc51653ac99675e48306082bbe06e8d0dcaf995843febffd136515c",
+      "after": "10dc0e8f1d64036533a26707ed7ca9520cf0abc64b41cfce75bb91131e675694"
+    },
+    "src/dota_coach/coach/moment_principles.md": {
+      "before": "074ee1473aac54f0114cdfb586f66f4de69a525822a3984322709c2764d0bada",
+      "after": "af33dbd38839b2376ed81be10df6f22da1c37c6695b0fe3775a2c5a27070bebc"
+    },
+    "src/dota_coach/coach/moment_prompt.py": {
+      "before": "a3d6563c7b97a6546e08ad687ab5c820ff93a1f11c4993caa26365e5206d4d27",
+      "after": "f74b6258a1e187df37f24d57eec6d96c9fb5e0d546bf39dd3952d35490fcacd6"
+    },
+    "src/dota_coach/coach/principles.md": {
+      "before": "dcae82f7e68c1385236f76a628626b35a3b76c6b0b06a04240473ba2479566b9",
+      "after": "7cedf2205346489bf147f9bd5561875a5f95a79b2b6cdf4f39ff06fc19370905"
+    },
+    "src/dota_coach/coach/progress.py": {
+      "before": "3caca939514c8cc6642f057fa5e8dd3c89d0702851257fd57088350c299af517",
+      "after": "acbd2e72408ef0fffc437b2948630dadd22e662231c3dc377cac901ff2748af0"
+    },
+    "src/dota_coach/coach/prompt.py": {
+      "before": "cc8fd6f53353d55ee285a3148d096cb1d16231e420d62669b109659949600a4b",
+      "after": "d03a6d71d24e24a97f3519a075b9ce72d8e94001bf0581519d2877b613f17b9f"
+    },
+    "src/dota_coach/episodes.py": {
+      "before": "3b1fdf1e027aa56ce570bede0a3196081527b94e0ebd842e8cbffa4a81934c27",
+      "after": "9e9b15821ecaab1ccce31ce2f89460fb4442efd117a4472941d113fd4d4be9c0"
+    },
+    "src/dota_coach/ingest/replay.py": {
+      "before": "68615bade33d9d1bb457a5c1c64c37db11f79178b8d431bfbf65efa2aa301cd6",
+      "after": "8ffbb770a93ce4385ca840de2e46515474259eab5da2520b9419dfb5b0aaee9f"
+    },
+    "src/dota_coach/leaks/detectors/_common.py": {
+      "before": "4085de5346db0d18d18d2b6c2e826033bcbe935bee930f7fda56b367ce303f02",
+      "after": "e0baa0383fc4f0c11e2e581450f16a3db56e54ff042dd6e576bf3612c433391f"
+    },
+    "src/dota_coach/leaks/registry.py": {
+      "before": "cc8e5f8da6a7c1e1515b2bb279cedfe33909a231d4a04c754a73c3a84406fedf",
+      "after": "478cf468c65714da0799dc9ca94929d80263694c7f432f8dbfb967e0fff446bb"
+    },
+    "src/dota_coach/leaks/rows.py": {
+      "before": "7d2caa587e77a41c4005f457894378d4ed11f9cbce92cc159de688fceac751fe",
+      "after": "22f25d735003e4f63fd4c1d13c3af590e9fa8d67be50153fe117a2b1f2a75074"
+    },
+    "src/dota_coach/models.py": {
+      "before": "8d3bb94d2579e5a973e384acd1695f8af26360346f73b749d1e4c7dcadea63f3",
+      "after": "5325523605067dcb44481728c19a508026288aa368158dd9eb803186a1cd3fe6"
+    },
+    "src/dota_coach/report.py": {
+      "before": "b669d889bf46e4ced840aee0fac7c8f6f7ea8bfbdcb17eae87e946973c9aebea",
+      "after": "dca475d4ea4af3fa9452929b06201702b3efc8598da7fb8567a843d79f867855"
+    },
+    "src/dota_coach/scoring.py": {
+      "before": "c758c792d23e108119a71387dc2d127983e58203cab6b89bcd0703faa4e37b03",
+      "after": "ec13adafb5b73551760f48c089b0865266a461dc3251e3817e75292607f4aba7"
+    },
+    "tests/test_cli.py": {
+      "before": "26e4c86f6ea8913ae9ecb095de254134bb38d4248bb0a0553c363163495bfe30",
+      "after": "d7eeae56f4799b76ceabb1582945eda4600715007862570228ce33ea93647097"
+    },
+    "tests/test_cli_clips.py": {
+      "before": "d9d3862f50c6b0bd68fca20e830c0e6733fc4c0a030386179388a2d29d6cabb2",
+      "after": "61714506b188e0c247f0a19f9cc797be08577c7a87329b1a85f725424d4c739e"
+    },
+    "tests/test_coach_history.py": {
+      "before": "12f6a781126e9da6d2e82ccf41128c3c32406d8c1cbe9257895ab9ab7ea20200",
+      "after": "56091fee3c31eb85d331ec6aecaae4fe95ef93677f4eb5e63760fa40ee631fae"
+    },
+    "tests/test_coach_orchestrator.py": {
+      "before": "93453b0a8d6a4b1b9f4372f87503cb7a00bd31e3acbb73705d8c25e662e37be5",
+      "after": "7f43dc9b21bbb4dd9801bdb2fcfc6d8785e6e36a9ef7397384b8489292fb5079"
+    },
+    "tests/test_coach_progress.py": {
+      "before": "5d50becdde0111dab9de8ebaa7f91a1dfab7aee1d60d55f45371e08df27dd50d",
+      "after": "e5bbc911c0ac1e718c21d34c8a9bb0cb96dff41ec6e4d7efc3829e3c68e9d4d5"
+    },
+    "tests/test_coach_prompt.py": {
+      "before": "dc716765bca0502586a65922021b95938b8cddb75ca08e77de32551cb02f2972",
+      "after": "1101055c65873cfa86bc1a361723b91e48fb1b80da9e95910f2b31189b09be46"
+    },
+    "tests/test_coach_report.py": {
+      "before": "97a7c8b273c7a05d88239743ec46b5a98530202279bd01a0c97f87b8bbf624c2",
+      "after": "551bd6ca0ede5687703cb8609ad00678b6a15bc1eba702b994671e91a5961d9a"
+    },
+    "tests/test_episode_card.py": {
+      "before": "a4939f653d9e2f0f230455c066420953dff455a450373d9d6f886c630117327d",
+      "after": "f4fd78e9dc40e49d19af19aab43d6ce173250cecc0d5328b4bce8a8cf72bd39c"
+    },
+    "tests/test_episode_note.py": {
+      "before": "9bb4cf9b796f5770a438634841bf3c01957957c01259ae595993c576c1b7098c",
+      "after": "42dad080266b03332ee3d683dd1857d399b788ecc839ec6b046304a8a43c0bf1"
+    },
+    "tests/test_episodes_build.py": {
+      "before": "5dfa9a6182fb714f1f3948616e03206be300ed6380bac39a787253b244c38bc8",
+      "after": "3b2dc3e67ad9e291a539ef352cff84365671abe0b18b777a1d862968b8c53d7a"
+    },
+    "tests/test_episodes_deep.py": {
+      "before": "c3dfecc790c598a2b15e70502fd74e5534fd9b3571ae217748e86d1e0aa616ac",
+      "after": "469019a9a1c588caf78f104543f0cfb2594fd2ebeb91f936dfead833ae5debe6"
+    },
+    "tests/test_info_state.py": {
+      "before": "9aa4188259b11c4ce0e926207020afbfe15bf9550afb6c3be11df73492adfe7c",
+      "after": "7391086dff249c6f29de2fe6c74183861db407f5c39b607374315a3b4eb35aba"
+    },
+    "tests/test_match_review.py": {
+      "before": "f2bcfe5a6a3e59ea208c08a71b40e3a535ac383c9cf6cd9b3610ee2e763a9698",
+      "after": "b7c583dbc72f749ec040f1bcc2f4eba49cdb55198409d20482783ea2ffedc646"
+    },
+    "tests/test_moment_coach.py": {
+      "before": "3e3589033f5c533069d6f2cb16f6ea1c4f274f9d32e19ebf517b9f266b14ac36",
+      "after": "2a9b871dc9f5b0516c5a4f2eb341c81fdbe72183570e7514802560a81cbd7436"
+    },
+    "tests/test_moment_coach_info.py": {
+      "before": "e5deca7c579178cf405aef3dbc672e5145d3f2684f2506fbdd3c7f830a9f0b08",
+      "after": "47d603d90af1bf194de7c7d87cef53540579141b866560fec3285f0cf54f6784"
+    },
+    "tests/test_moment_prompt.py": {
+      "before": "247def9712af2791970842cbe6ce0470fddd3da76b9fe253455a566585e005b5",
+      "after": "2c8f7df87f98fbafba400f83240d6a8059649ca0d69ec76fbff074289e63e1b3"
+    },
+    "tests/test_replay_models.py": {
+      "before": "ee53e575e3095271c6fe31901605791469e584ef379aaeb49582491ba9f24603",
+      "after": "5a18a92b9125be40b195cc47490728a60a8f19c82274987ba4ec9b9b585123ee"
+    },
+    "tests/test_replay_parse.py": {
+      "before": "b9c1b241356b84196999c76e3947966b2e59c8ae6261f6d5c8b009cc1cea44ce",
+      "after": "c4b4f35d32874903af1ba5b7500c1adebbd1815edb7ad1492298e74b2b79e000"
+    },
+    "tests/test_report.py": {
+      "before": "74ad47bb8f2de9a5f2578456970b48932368f952ca00b0c734751bc066d36f27",
+      "after": "82b12d3274635e8c524fa4208252edcddd97cdeb11ea570a93e0489410b44209"
+    }
+  },
+  "paths_not_in_baseline": {
+    ".gitignore": "8e42a997f8b61adf91952eaff46eb324d46784fb2b1427f89c53c6daf8699cf8",
+    "constraints-python312.txt": "06ccf873195a2dcadfb508678cdce307efb9312a198b79ead93bd7b7f095ef2c",
+    "pyproject.toml": "a0955b1b0320d63fe768fa01dc3738dacdce740cace3b4b5c8fbb6f3635e3f7a",
+    "INSTALL.md": "d1e35c83f10b3405ec4b9821c861f6cf95710ed8f2784bb2bd80d938f417e83e",
+    "README.md": "952f3b72c803c6ca95f48c56071db4b018e54f35ad04f7eec52da447ec1840c0",
+    "assets/clock_box.json": "609f15fa671c71a4155855415a2bc0f279cd42b5977434af92c53952977577a0",
+    "replay_tool/main_test.go": "0a98127ed527fb2f979e4404eb4df429533b2f95bde65a20494cf8fe38a87a66",
+    "scripts/audit_local_changes.py": "5b4437493fc1fe8ac0ca8c0990a43189570559dc5c91e679a22a7ddf8a4d016d",
+    "scripts/build_clock_templates.py": "4f36ec3d5944c54ec18a3dea61858d7125c449d93298dd88f318793f021526e5",
+    "scripts/acquire_public_replay.py": "1103767d6334c9860ef4f1faa70561b23fb58e374d43b124661429c96ca5d23a",
+    "replay_tool/orders_context_test.go": "eeea661e507aec5c793aae5be979bc0a834d53b0b8537d6d8f637d7d36f682f5",
+    "replay_tool/orders_context.go": "9c52860589e19dd8aae8edd9e40c0c40db6aede2e0bf423ecfd3e7e41ae203ba",
+    "replay_tool/orders.go": "79c38b27968bc5dd6416a9faa8a55faadc230c829ee24e500a668d9d9e0946e1",
+    "replay_tool/orders_test.go": "738389843f4198ea907d28748059385c12d0110b7775942b797d0ab4818ea941",
+    "replay_tool/projectiles.go": "7aea3a7fab17ecf9650c189a6ca8a413437cea560567f601d1e9322425e661df",
+    "scripts/check_package.py": "a0d1f0cadd84d15981a8edc44210ca81b7cc9a0f42405167046031fbdf3533aa",
+    "scripts/check_installed.py": "a88d1af16fd66f29836d4b648b5e34c623cd38380b609f6d6c5e4d9ec1d247ee",
+    "scripts/build_synthetic_demo.py": "5fe1563fdcb3e1b8f56908ee12babc753148e263fafc99c47414b59dbaca2bd0",
+    "replay_tool/projectiles_test.go": "874119e291b8b85c5ee9b3ba5fbca6ccf9e7a630950f7a025915d9381b1fa049",
+    "scripts/extract_orders.py": "d86e1567d93e1c43b439e8f759833a1a8d459954d59cc7c877afe2f4330d88c8",
+    "scripts/check_project.py": "564d50b82c666ec9ff6098e1851cc1a11151065fcac0f3c2e99a88e32136991a",
+    "scripts/extract_trace.py": "d188e1f85869c53eca5ff8e2370adf491e75f3c5128a98b861dbba69dcdcd991",
+    "scripts/run_local.py": "146e539bf97b4df6daba360e7484d7c429df734f62784e9ddc1836356c425221",
+    ".github/workflows/tests.yml": "6b8794583c8d3eb55a9406cf81832e03a1772629e020b8c146c002fa715888c5",
+    "scripts/real_workbench.py": "c6fa77bb26e6c06a0c9670623a76e426f7b2ff77ee4dbfaee7e00b5978d47027",
+    "src/dota_coach/analytical_bundle.py": "530273932fd08e5e1b20b3e7b8a3a943666344f91c4af6f7a63986bf5de1aab5",
+    "replay_tool/trace_test.go": "d1444c44ab28dc2a338f7d497d45ff8ff2d82e5ac26b29d6f44478061d213098",
+    "replay_tool/trace.go": "47fe4fccacc8d79954f0920cef1cd7034a0630c5f194245dfea6b34696f6da86",
+    "src/dota_coach/analytics_surface.py": "c296a2d9774ba1e2d382ce190e27380bb59aae03a28a1673a3bfcb8b02163edd",
+    "src/dota_coach/analytical_workflow.py": "98e65eade108d9fabcc892ddc3595f4cae2b179de6cb6883cba067b9389ed568",
+    "docs/data-spike/defensive-activation-v1.md": "304a60f9f896b425874510eb30d50405a39f02f4f338b68cdd93c91f1fbe99d4",
+    "docs/architecture/2026-10-09-handoff.md": "28a312c73e382b9d766f9a6675545b4bb2f308e25c87a67ea9703483c0bc3b34",
+    "docs/superpowers/plans/2026-08-24-full-match-episode-review.md": "08cf071de7e90d6cfd21da12c9f9c89538860630079bb461d19ddcf4947309a7",
+    "docs/superpowers/plans/2026-08-21-replay-parse-1a-state.md": "1f8e2e86ee76ee45105e7c3707113792fad972ff0e3a1336af60499fae9838b4",
+    "docs/superpowers/plans/2026-08-20-single-match-focus-coach.md": "b8b0ac0d061f9a2289576ae1617718f4c21f0184ff9c6d01f3e1f6d3a04d7ed4",
+    "docs/superpowers/plans/2026-08-19-dota-coach-role-aware-leaks.md": "8706b2970e69ea2dad14299c2d895bfbbf3e1d4db84d89eabefd05da37739028",
+    "docs/superpowers/plans/2026-08-17-dota-coach-claude-cli-provider.md": "188f1466f06bd8a4585c507b248ebf8d7928a63d8dad3ff41aad43ee305da14a",
+    "docs/superpowers/plans/2026-08-15-dota-coach-phase2-coach.md": "2c8a7f745a2c8a28da16c571bdefd01317c72d8b480d78a5cccc2c4e7061816f",
+    "docs/superpowers/plans/2026-08-14-dota-coach-mvp.md": "e544927c16bbbe452f0a5e44e0f414d8311b300e8b828bfc1e9df5443b51a2c1",
+    "docs/superpowers/specs/2026-08-17-dota-coach-claude-cli-provider-design.md": "5c161c241694070fd44a8b6a4c4254ed8c1911be4928106bdae239f3d2e9ea1a",
+    "docs/superpowers/specs/2026-08-15-dota-coach-phase2-coach-design.md": "f320977cd6cada24f1de0b5ca279565a1d227a9fd1a15bd1afcc7c01a7f9aba5",
+    "docs/superpowers/specs/2026-08-14-dota-coach-mvp-design.md": "11e1cd5def9f60e8f4c4fec733c8ab2cc185d09b25e10f70329d2e3fc141e910",
+    "docs/superpowers/specs/2026-08-20-single-match-focus-coach-design.md": "3825882cfad6d0ca0ab8a7e4ef5675cf0c69394f27b4975f93df463ddd5ec604",
+    "docs/superpowers/specs/2026-08-18-role-aware-leaks-design.md": "fc20f7176533ca29eca7e0aaf47424a36e414f8a34df0bc3359caaf945c1e46c",
+    "docs/superpowers/specs/2026-08-21-replay-parse-phase1-design.md": "f82da78867be504283aa3c298a419dd1359ef8aa12c50ab95d01f569e57db3c4",
+    "docs/superpowers/specs/2026-08-24-full-match-episode-review-design.md": "6a65f267a002d86fe66f13f0087a02238b90b6e179aee9b2613fae51e552ac7e",
+    "tests/test_analytical_integration.py": "49e38cd758657c6ffbd58cd1f0eae22ee73b0d4880d6d0763dba32afbcc0d370",
+    "tests/test_activation_engine.py": "86a4d17e60177f75980aa1eeb0bb754131e04af6c81682ca33ccfb19f4ce0257",
+    "tests/test_action_state.py": "1cd3424205743ab82e6e3bd162f223498b7973cf68544a905f67111558b5161f",
+    "tests/test_analytics_surface.py": "c10103b512894b93dc448a82946c054625cb9440409e44eda83006ccde588cf1",
+    "tests/test_analytics_cli.py": "d32eb2bffb4cefc5491423de2611b053f76742301020912a95b8e12d5c344157",
+    "tests/test_analytical_workflow.py": "98b680bb3f3e8f9305629f2f5e5c5d767ed9eca7bbe8a52f2f6d3f0bb6fb0cf3",
+    "src/dota_coach/feedback.py": "c9957fd71871b3d94b3808307479ddc7826b1176bb6389ee4d017e0cdb833d19",
+    "src/dota_coach/wards.py": "90b3928b587d461a865e3da4114d8d6acb2a8e1114464da4ad2fc17920846a5d",
+    "docs/architecture/2026-10-05/source-snapshot.json": "86d3cf719749f2b0cc4aafb76f519439d6c9375d66a6d6ca0aa7a8306b9b5672",
+    "docs/architecture/2026-10-05/README.md": "98e974bcc2fe6d8c4f6615b40e5e3c19e73ccf069a6b0a4c41dfb883094d7b16",
+    "docs/architecture/2026-10-05/audit_probes.py": "c3f78ce3e1be6528a1af2fec204426c644558b2b7950b5aa49a4a44a0a588486",
+    "src/dota_coach/evidence/__init__.py": "7e1ad89d6ff450b911e1869ddf482f38dd7eef183fa262352222207742e43950",
+    "docs/architecture/2026-10-05/audit-results.json": "8535bd5dd3db5b15ba27565054e4353956469256718b86ae08073783344606eb",
+    "docs/architecture/2026-10-05/05-handoff.md": "d5c43099ff9386890d4501381de78f162d990c1da3e537bd89eaa420c676f808",
+    "src/dota_coach/evidence/temporal.py": "c7f9378c2cdfe90084cadc0c09932cde03453718922bfb3b41b78917ec2c46f6",
+    "docs/architecture/2026-10-05/04-validation.md": "9467874a4ce5978f5e0e7fa97020a88713a21c43b9f3e6d8efb5240fbafef07a",
+    "docs/implementation/2026-10-07-continuous-command-stage.md": "31c73deee873460f9f44cc0107decd93ef623e478df9e79e34b29451c9bbb8e8",
+    "src/dota_coach/evidence/knowledge.py": "1251db086bddecc98b5fa9ac57b6419eb76d1dbbac2717995dbd63b919e1a888",
+    "docs/implementation/2026-10-07-contextual-build-plan.md": "23380317b2fbe11b11a4dc6b1633b9476278ae7f8975686f9e5b01d394fcdd9b",
+    "docs/architecture/2026-10-05/03-contracts-and-pilot.md": "3962f720514073a8efa5f539495b8c72f3a4bea929fbf6a8ff932655ee07e3fc",
+    "src/dota_coach/evidence/contracts.py": "9504b4ca3f51a181f35668c00a6a827f180a80924fe70543a802197ddf385d40",
+    "docs/implementation/2026-10-07-choice-knowledge-ward-stage.md": "caf81e642015f767d01a5ba5ef0f7827a97fa209e4a57a867f21f9fc4e316f2b",
+    "docs/architecture/2026-10-05/02-architecture.md": "a81917cd96d3fd14736eb61bb551814c75cacaacec4cef46f549994bd229eee1",
+    "src/dota_coach/evidence/clock_math.py": "9d4f1b903b58f76954077d8d9dbe0f2222c86bf550bf5a2d81211c163361e277",
+    "docs/implementation/2026-10-06-tz-coverage.md": "a770b8fdb04d4291e183d8011425efc6c797e8fb078349849b382f81d3360f26",
+    "docs/architecture/2026-10-05/01-audit.md": "0fef94fdbac168e3ae813ec4eabb07901b6fcd0020ba9a8ab9210bf433f5a181",
+    "docs/implementation/2026-10-06-training-cycle.md": "afd7effd09ff2c00cfd67c8160c6088f8dbe190c583cf1e542e45f6658df872b",
+    "docs/implementation/2026-10-06-test-handoff.md": "8ce298340023378e65866f5ddc1371eadf9ac63345b335862925e068c1e52f94",
+    "docs/implementation/2026-10-06-study-sources.md": "a7c946dde239d71c801331790438b291042550188bd7497d4c149a2210d31796",
+    "docs/implementation/2026-10-06-resource-independent-review.md": "11dfca211605184d2b7cafb2bb4eca458969f7eac7c7bb35c36add7a07b8a86e",
+    "docs/implementation/2026-10-06-real-pilot.md": "f9d4a521eb5c9785e9212b135bd34f34818cb55079ae32413e1cd6af848be00a",
+    "docs/implementation/2026-10-05-evidence-stage.md": "fddd0f8ed6773b9830b366e1d518775bcb0d42ff462dc8231c87bff92198471c",
+    "docs/implementation/2026-10-05-completion.md": "381c2f1a76f2ab1df86a5f3c8d5a3ca22153cff8a9ef69d5e4d9780acefe29b3",
+    "tests/test_choice_window.py": "4189d1923220554057354f3c5008f5e27405c563c07d9d09c9f2c1e259492de4",
+    "tests/test_choice_temporal_boundaries.py": "b6f65b054038d2907296c8996a46aa822fdf5442622c41c0a5b6ef3395152164",
+    "tests/test_choice_monitor.py": "2f932501c267084bc4a96edf055f4b86d1802d61cb47af384b53edfe9a5a4b36",
+    "tests/test_build_plan_surface.py": "1cfbf0621f73ce81219c1ed3807dee6c59064585f4804637cee2df7b587a913f",
+    "tests/test_build_planner.py": "d694234cb99a3b6b15a51579a87dc6cd3704973ce96a7865da58f3fb9b064d79",
+    "docs/implementation/2026-10-07-replay-source-stage.md": "da4268a389284ab968561973e2384a51718b2814e945cf9d7f7fe78b1ac62486",
+    "docs/implementation/2026-10-07-remaining-analytics-stage.md": "2d2049f9f43a024a0badc709c7de8510d706fedd5d3a89f1e61c74dbbd4c4b11",
+    "docs/implementation/2026-10-07-external-validation-inputs.md": "bc80370659cf9576d93d0e6ea55dbe10bb872d19ad9c580599447c5715826ea3",
+    "docs/implementation/2026-10-08-single-impact-stage.md": "89af74dc613e20dcefbe071d68151244c059c46854c4183ac58348e985eb29eb",
+    "docs/implementation/2026-10-07-semantic-review-stage.md": "fdc878c53ca4550a295081536f7de545d79cd8d0f349ed82767cc5d1bb1447a2",
+    "docs/implementation/2026-10-08-integrated-analytics.md": "f8d0a92c3ff8674c717fc4950f2608f1868f4fcb3d7f40592275545117492bb6",
+    "docs/implementation/2026-10-09-command-stages.md": "5bb087761a15dd089329dca70e7282133caf79b9416acf788dced4b3920f6cdb",
+    "docs/implementation/2026-10-08-tz-closure.md": "6e0c2d728ef1cd9f5eb98eb478b136e5c562ae9eed14565ee9ad9dc15f525bfa",
+    "docs/implementation/2026-10-09-choice-temporal-audit.md": "fa273114981ebae6c9b173d9b01b5597048f7b8c7fd35ef388a079d9b2e0688d",
+    "docs/implementation/2026-10-09-projectile-source.md": "9432dcb719da9a674bb715b862b3cca6be6fbc547a78669bc1bc4897ef36b48d",
+    "docs/implementation/2026-10-09-unit-control.md": "db4def3a64bdb8d44cb6cb7f3c246f3d95d83f7b7afc1ba208fe2d6350eebb00",
+    "tests/test_command_census.py": "c9b391eb33e79341c19e97ef9d33e2e536e50e10ffb326d44acc4e1314fa3d5f",
+    "tests/test_command_binding.py": "791f2bcd32ec81e691bf7e1bcb2a17573964d04dc24f88f971eb2e1a90d53977",
+    "src/dota_coach/profile.py": "06e87efc31d030ac2c0961d98f0614f6d03c11173afcdd8a0cbd062b405fa478",
+    "src/dota_coach/live_report.py": "00b19da5810476dfe12af359724c7d50df26f2284984e539fec13b19da859856",
+    "tests/test_command_stages.py": "1dc440f466e444a4da2522664c62493e6e1fc5533ff4edd80370072646bc23c2",
+    "tests/test_constraint_source.py": "71217d06b0fafaa6235149da3eaf96e54d18548485bfd1000024b5fed9a238a4",
+    "tests/test_contextual_builds.py": "cb9f711656e2ac41a9cc60417ac84058d504dde04106c47cb89c6dffffdb49da",
+    "tests/test_criterion_gate.py": "dd0ad71e3d52988c4ff419d04d5dad4d67c2cc389be3ade1f53d0f8947783064",
+    "src/dota_coach/semantic_surface.py": "9e1d1e5825fca2273ce951c4943722ac12e0905aff0c008c4f55a2b03c29ff90",
+    "src/dota_coach/surface.py": "bc7f20eabf245a5d681400c1a234001b0f203f5a7030bf04b8cc8d78ce2ca8d3",
+    "src/dota_coach/server.py": "5444f39b832a5402b57741cdb393b0d8f49895c56b8bf7e255a2ed2c0ea04a19",
+    "src/dota_coach/decisions/__init__.py": "f84934f0e3440f0e90e493ad8a64acb46b33a33daf6dce2c2e82d9ccef508ff9",
+    "src/dota_coach/decisions/trace_episode.py": "36058961aec8587d51c9956bef6d1f31937825cf5b24a343613feb862b2e999c",
+    "src/dota_coach/video/trace_clips.py": "2ea2eef292230c82b2c8fbb3ca21241ee94e2114180b4007ca25e838c32a37e1",
+    "src/dota_coach/decisions/terrain.py": "0a23fc8e26983ea1c69e1441cabaf7d6db9285e5ba4809822cc5e70f5f98d58a",
+    "src/dota_coach/decisions/resource_review.py": "46a9edc49c523f2e6fa09261fc4dca635e2878e2eb6c8256b858822074e6386d",
+    "src/dota_coach/decisions/opportunity_discovery.py": "bebdb51e8a967ff0cc9dc95b64d147e14510641f6e43501c537dedf747987771",
+    "src/dota_coach/decisions/movement.py": "6f3a66eb2306f79e06ff39f2434016f6574c07b4461e5170ce1aba9b030081c4",
+    "src/dota_coach/decisions/mechanics_adapter.py": "eeed3eb074b411c1cbec9e399112da36982637f05db495f0c51c4ed84bfd2ae4",
+    "src/dota_coach/decisions/mana_reserve.py": "be11b07073dfb4098c198ed14c2e77ff3361f28bda0e8a1b6cb2f5b8197dee1f",
+    "src/dota_coach/decisions/impact_pipeline.py": "9be42acb1ddf8cad99666d8449e71980b5eeca4bca75f3c6b23b6a8e94e7ce04",
+    "src/dota_coach/decisions/evaluator.py": "71ace1de1e64287421e9bf6d60b2c67c1a4e57f73b6d64b0d65d422443ffff65",
+    "src/dota_coach/decisions/dossier.py": "4b1c35998d1e8b5b731d089527e8ef19cbe879dbb681bf38e10e7bb7363a6295",
+    "src/dota_coach/decisions/defensive_impact.py": "e2454a2e19fa234a5b07b24d97b19d26283f4594a32d2ebcd1010ec132b57a5f",
+    "src/dota_coach/decisions/contracts.py": "b69231a0fc4dcab7b9ac235b06cb50dcfd4741de16352d81940913dbf2d0c37f",
+    "src/dota_coach/decisions/command_census.py": "4f4ad94f58cfc0f8ae56629b86b574ebf38d2e39a82d58a1f335f9eb4d74fafb",
+    "src/dota_coach/decisions/choice_window.py": "70210952c5054f16fb9a48e7add257e39e9ccb97adb9e66b426af50dd066c304",
+    "src/dota_coach/decisions/choice_monitor.py": "ab1e6f05a98d09066bd6738de8f841771d508e01d4e4f6e07dbad84661f011d0",
+    "src/dota_coach/decisions/batch.py": "f7929bf75d0d643bd40d97439429a46ca52941e42ee42d715d0d1f72fdece2c0",
+    "src/dota_coach/learning/build_planner.py": "191da85ea1135f61cb616b59ffcafe419ef7c17c3588f4e63fc2d581872563ae",
+    "src/dota_coach/learning/builds.py": "ce4416daa6968b812aa3593b69c1a2667ee03fa248c521854419adb677c610ec",
+    "src/dota_coach/learning/build_plan_surface.py": "80ed169757612eb73935f4cbd87dd9ec22e7e1038a5147cf5da010954ea649eb",
+    "src/dota_coach/learning/contextual.py": "1f719768aa7714327454d699bf0e4b060fbcba5d96a7863fee1dd388c6ddba7b",
+    "tests/test_dossier.py": "45d2128c79fc8ccb53cc42b6187c81f31e64e2b9a5acadf37b642a99ba40e717",
+    "tests/test_defensive_impact_integration.py": "19cd2cedbbe60ef06564bf444ff9257fc09612c1eb1e5ea577995aa949e0fd76",
+    "tests/test_defensive_impact.py": "9c20d7d9ef9fd3deb8f4288c2aa2b33ccafc6296ec5aeca32d639647e13fd16a",
+    "tests/test_criterion_gate_cli.py": "a1199660f534f065e99c8a052e37d13d76485d9d70e1ff14f8f411fa84cf2c28",
+    "src/dota_coach/learning/habits.py": "8f908db9a513d78755bc612b0c91c9c3e0f9ab6de7515551a113313d67514aa3",
+    "tests/test_feedback.py": "e958d9217b8fa738640108096d5fe4c119e9f53904297a1c2867981e0a693889",
+    "tests/test_fact_quality.py": "368e30859019a291ee6dfcb4aad368b0f930b627356b8e38dc1a8b117ac60f79",
+    "tests/test_evidence_boundary.py": "5f9eee57c7b3fa17fe723d8edb9d94d6a620bd61474fff41ea6a58232ac6aa90",
+    "tests/test_event_visibility.py": "3ceeb2518bb9693dd48d37f08cc3099a948ea37059e5a8131811fce84fd43fed",
+    "tests/test_history_revision.py": "abd4b5f84085458da40e40253ea9eaaf329f57c580b497a9a3914e8d90d5a8a0",
+    "tests/test_full_demo.py": "492516ad7eceb48806dba6bf1f3f630b6572bea07cf50e9faea0e70ae122ece9",
+    "tests/test_impact_pipeline.py": "d452b6a10ee6bd99dadb9a8f3efe284b57a59a81993e62925737538ccacf480c",
+    "src/dota_coach/learning/portfolio.py": "3cdc1a0481016b0feee7161e852c1909cfcea79e1efd83e0bf56e53ebe201dd1",
+    "src/dota_coach/ingest/action_state.py": "33709f704525cb8ad4f04eac26e248c5defa39fffa42f42dc81a5721b92bab7b",
+    "src/dota_coach/learning/__init__.py": "6c2ba3a1e776f8958cd1de2d4da9623f7cb9fe8dcb2f0b98adca202409bac385",
+    "src/dota_coach/learning/ward_review.py": "62fc91444ef7a394afcf6f30f28fb2749093e67075efbaf54e26c40ade42f547",
+    "src/dota_coach/learning/ward_plan_surface.py": "411c564515ff7057d28bddf0c46ebfe22ed7409b1a964ea51a779cff8ad9b47e",
+    "src/dota_coach/learning/ward_plan.py": "698972d78888d63262e64389ad7c23e2c578401229aa7fd014644da5e39f2ba1",
+    "src/dota_coach/learning/ward_analysis.py": "769584e5cc1287a5cce636e01859948ad0f1da893ea628b077cae556da40af80",
+    "src/dota_coach/learning/verified_history.py": "892ed714cc97bc17372432680c685b2ddf6203631f882b8e9a358f7d37ece841",
+    "src/dota_coach/learning/training_surface.py": "59b4347ea711d2d0fdf25219a6964dc861b3ed990a9e3946adc04601d2cae719",
+    "src/dota_coach/learning/training.py": "b390b8bbe69e017344107470b4a899e2f708d4ab7ace8afd3a1f3235b5c3aa1b",
+    "src/dota_coach/learning/study.py": "7277186c1d9fbc4b304650fba5167f63af1694eba7fee8fe4320c5218b4339ab",
+    "src/dota_coach/learning/resource_plan.py": "29d18b9b2c38ed3996367a1e669613094abf0838cb384256f752dc05befc8cac",
+    "tests/test_impact_prefix.py": "6e03b4e74a816dd81e1698c2e3e06d7693e95d1cd6d9900e35f15c68209cb2d4",
+    "src/dota_coach/ingest/event_visibility.py": "c5a72e8b95358e6cbda10b54eafaaed7021ab67b9fd01d753c523e1012a14ac5",
+    "src/dota_coach/ingest/constraint_source.py": "e013f5b24b0a96723a40874525a08737ffe894e1706f694383f0001a18b39407",
+    "src/dota_coach/ingest/command_stages.py": "447672f298484f6d99b1cf8814001fdc818953191e874345edc3ef23e8485c8a",
+    "src/dota_coach/ingest/command_binding.py": "e8dd8f1539710b52920a6864db923a34c1e946069f9a7be76e076d6dc6451f0f",
+    "src/dota_coach/ingest/impact_prefix.py": "a61d039d8a0e24db74fa06608b15e61579df270bdea260a0a2d43925e2d0b59e",
+    "src/dota_coach/ingest/objective_state.py": "dd6ca6a00abd8e3223e90c138bd3338531357a8c40a1fd648bdae844cffc8ddb",
+    "src/dota_coach/validation/criterion_gate.py": "e8d8140fbf2d173439f76bc1a6b84c1d26bfd674aa356bc91385725506072f45",
+    "src/dota_coach/validation/contracts.py": "17435ce8b4d29573e40c9de1923940e37dcb07174377ad23ba5d4119462fffad",
+    "src/dota_coach/ingest/order_source.py": "eb65ed49ff5346db4313fed574f5d8e5b1ca7b2720e87afbd9ec5d4a9a8f3310",
+    "src/dota_coach/validation/pipeline.py": "e81a54277ad587fc764b3089124273402ee37199b29a8f8dd426c4a8169165ac",
+    "src/dota_coach/validation/fact_quality.py": "94a3b6b954d69038c78d941c4e46a2ccd989b84e68dab61233ddcbc8620b2772",
+    "src/dota_coach/validation/review_workspace.py": "cac179372aedfa0ff9b7b8b46bcd54a31537d39319a72aad2d90cc511afe5dca",
+    "src/dota_coach/validation/__init__.py": "5dd41f51e7c0f9b54d4c9a44f81eb325b93509ddb332672c79096563b9916989",
+    "src/dota_coach/validation/trace_pack.py": "3335f24a34979f9b559536d5b17cd86ea7e7be1c385512221fd59fba3b397332",
+    "tests/test_live_report.py": "e280c2cce363bac3a6eb6b2e4732b06af65aac01f9bf043625901958f4ff2849",
+    "tests/test_learning_modules.py": "7a52361f605e9c9bdf29ddd6c8d6389f4ba6f8ada4519503d8f9212f96fbac0c",
+    "tests/test_live_video.py": "a86b1bd03d54094b450772baeef6344a6cddfe7c1213bea179a9c315edc90835",
+    "src/dota_coach/ingest/projectile_source.py": "983e4a6d13ccc6fcc4bfe24045aac0321198b22171f2f9104de852af56c33640",
+    "src/dota_coach/ingest/semantic_events.py": "ee79ac4788ba859a376701f29edb81d0a26f763a6169b6333a768e1dec4e8f97",
+    "src/dota_coach/ingest/valve_catalog.py": "a9617225fb5f886045a59a0ee817a8a8f9dcab00b5792286fdfaaf6257715daa",
+    "src/dota_coach/ingest/unit_control.py": "e690704b8ad34ab70ac4d2de43d4e41df09306fe1d83adf61a924be8b9865fb1",
+    "src/dota_coach/ingest/trace.py": "06678baa4f98f29591d728ed775c282b4f285d65f11416405a1164b4dfe480d9",
+    "src/dota_coach/ingest/study_sources.py": "0bc0555680a54daa8cd4671679e34a5d97dad031a32105551725aa3a396c57d8",
+    "src/dota_coach/ingest/semantic_lifecycle.py": "8d10053997d0548cdca5a4af12ad4484b0e66f19a2b2c7aeb4c161613c8b3fbd",
+    "tests/test_mechanics_adapter.py": "d6a0a1d88524a46a972b58ec87d1122d5f3622aae242789ca0da10f166cfb010",
+    "tests/test_mana_reserve.py": "aae046c936bf0fd488f70836e48624f36bbcfa26d473ed8469854935c8b4f7ce",
+    "tests/test_opportunity_discovery.py": "cbe53ce24410fc2c71f4d130e89e03ade80be57df3d056ed448024d979ed5040",
+    "tests/test_objective_state.py": "5e36a8a0983b98a7ec7f3c657f6820c3fedcf555e287f7e155c79317fd6cab50",
+    "tests/test_movement.py": "853008cc8a250c1ff752c1d13d437282199c60e99a452e59f7f10cf237ccae12",
+    "tests/test_portable_extraction.py": "ea6310b71aa69a5798182c03a2d95a0fc84a05586c99314119b3f9dfa306f8c8",
+    "tests/test_package_transfer.py": "50c9aeffc8a7686876d7dc83bf628fbdc9a0ff0c3aed266cb625d4606abca6a1",
+    "tests/test_order_source.py": "080ce7945e93f78e346b95155f95d94068897b3a87d427813e65dea84ab5fe34",
+    "tests/test_profile.py": "318c38aba21b9f7503a72b2b0d6d24e5b25b2f937a354a53f4c909f3f1fccf8b",
+    "tests/test_projectile_integration.py": "4801fcd7e31ab637890be620bacd1e8f28b7ed7fc1d0503ce68dfe690c53d1d8",
+    "tests/test_workbench_input.py": "539fd1ddedab9f2a757d9e56aff5a90ed9a6d3a0a0487ae344105040d5f1f240",
+    "tests/test_workbench_http.py": "f63f16b39870552eceee491dd34b8d919e37f5ef66c2eaac77bff6ff22ab0bcb",
+    "tests/test_ward_surface.py": "acb5c10240ef4a36bf4b3d84ad0e687b7de2b8f55681be26856985a30d1ca840",
+    "tests/test_ward_review.py": "2d2d0a4160701d0c81e1cd82dc8a88b1f400c3cce2ed87199ab4a22ba668db78",
+    "tests/test_ward_plan_surface.py": "ee71b0e4ee0221f4a77808a328779ee77c9da8a177266220cbe2cee3102af04c",
+    "tests/test_ward_plan.py": "4696a3ea8ce90d1ca9b8fe32ae5dfbc4ca89d2497767091cb77c1f8a272a6981",
+    "tests/test_ward_analysis.py": "a7d047a2d238c6f9c869d78e5d8d54716f89dc283b28d45aefd44d7fd3ef1f04",
+    "tests/test_verified_history.py": "82dc564393356ee8c20a5b0afe72e64212675069ad3984ac2d4c09b8ca254732",
+    "tests/test_valve_catalog.py": "5ea8776d4209202fa58c6b1943a0533d0af3dd37c86bdd7046b4512c9c830504",
+    "tests/test_validation_pipeline.py": "9ffb19c9ceb43a8b2cd88b81997529b40d83db609c8d727846ccbe55d70a1747",
+    "tests/test_unit_control_integration.py": "dbed29fc60075a27ac5946cb62f2bc0f2927a14ded2d91e52a051cd0aa11c9c2",
+    "tests/test_unit_control.py": "181f637e965671693657974be84a47452fe7698ccd755743c9be446a08f0c66a",
+    "tests/test_training_surface.py": "1c963baa809045df7d92e412b60af8a14d13be08fe8a06a88e577b089ad3cb0c",
+    "tests/test_training_cli.py": "7fcfcaf80793aeb368ded7a4d2fd82c2554ded00a91447263009dc33cf0a92e6",
+    "tests/test_training.py": "a1dd1d685417c96a2c7b80ab0504b9bbf4958eaa7a14732601b703e55925198d",
+    "tests/test_trace_pack.py": "4b710492405b40af90cfc6c73475e4d1574a7319d997e3b9d46cc5d03f015fe0",
+    "tests/test_trace_episode.py": "be94ed7239f076b64077f2cbb1bf84c58ffb68d8a7d1991a100efeacc14e7892",
+    "tests/test_trace_clips.py": "ed1f5d756ddaf372cf049d7bb0cf4ba2bf7616057a2de019869035903de955ba",
+    "tests/test_trace.py": "e3a4d3d2d38820f1907d514dac3e2c12f14ac8ebf969508f8b3c993bcf68a473",
+    "tests/test_terrain_cli.py": "94b475226e7ae994f21fa5c4322a345cc2c36043313ba3d4bc4709815620cb09",
+    "tests/test_terrain.py": "c7e53852083f82248c9a6fea8cff3e5d2cd051df2f9480ecaa13506a3b4c1e15",
+    "tests/test_temporal_knowledge.py": "d935bd6e474ddecdbe3dde236aefe933d86736e20a7321a1bf6019f104d81f60",
+    "tests/test_study_sources.py": "fe0887a38ea65c1ec725ae597a8c946fef797c70849a07c542d8289b54f7d041",
+    "tests/test_semantic_surface.py": "0e891c7373c3d2a0f80373f1cd0ba7825d22c01a804f0e42a11d41fdd7cf1ded",
+    "tests/test_semantic_lifecycle.py": "49d7cbe1bbc13e5621ac1730b844f2a417ba9d7ae10a3ac6f23716293516770d",
+    "tests/test_semantic_events.py": "a7b7a03ef261c027c0b6539268c862881f82e06f654796a5f4d3584543250850",
+    "tests/test_review_workspace.py": "f4a3870432412c1015fa182bd40b36910137619f777840a15112367694240427",
+    "tests/test_resource_review.py": "284b74dae16959d18189c2c2b16fdd50616f676e48e57bdf3f0791dab67019a9",
+    "tests/test_resource_plan.py": "081f612e8e6304ba61c7ab485c328cbd7b89e4e15d55f8458c09d63b4e68cc1e",
+    "tests/test_replay_foundation.py": "2b734a70069299532a8904f201381c4b5404676c2fc49f16a6e16782f20b8f7b",
+    "tests/test_projectile_source.py": "3f83882af9ceaa812f30eb5d4fe06a8620acc60706fbc880b7f1530758b27206"
+  },
+  "baseline_paths_missing": []
+}

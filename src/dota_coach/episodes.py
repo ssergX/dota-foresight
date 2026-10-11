@@ -3,12 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dota_coach.benchmarks import player_benchmarks
-from dota_coach.coach.info_state import info_state_at
 from dota_coach.events import extract_events
 from dota_coach.models import (
     EventCandidate, EventType, Match, ParsedReplay, PlayerMatch, ScoredMoment,
 )
-from dota_coach.coach.moment_focus import VERDICT_RANK
 from dota_coach.scoring import score_events
 
 
@@ -18,7 +16,8 @@ def my_death_times(parsed: ParsedReplay, my_slot: int) -> list[int]:
     prev_alive: bool | None = None
     for f in parsed.frames:
         u = f.units.get(my_slot)
-        if u is None:
+        if u is None or u.alive is None:
+            prev_alive = None
             continue
         if prev_alive is True and not u.alive:
             times.append(f.time)
@@ -30,7 +29,12 @@ def my_death_times(parsed: ParsedReplay, my_slot: int) -> list[int]:
 class Episode:
     moment: ScoredMoment
     severity: float
-    decision_time: int | None = None   # точка решения (для смерти — раньше момента смерти)
+    episode_id: str = ""
+
+    def __post_init__(self):
+        if not self.episode_id:
+            ev = self.moment.event
+            self.episode_id = f"incident:{ev.type.value}:{ev.game_time}"
 
 
 def slot_index(player_slot: int) -> int:
@@ -44,69 +48,33 @@ def _death_events(parsed: ParsedReplay, my_slot: int, teamfights) -> list[EventC
             continue  # смерть внутри драки — свернётся в эпизод драки
         out.append(EventCandidate(
             type=EventType.DEATH, game_time=t, involves_me=True,
-            summary=f"твоя смерть на {t // 60}:{t % 60:02d}", data={"solo": True}))
+            summary=f"переход alive→dead в срезе {int(t) // 60}:{int(t) % 60:02d}",
+            data={"unmatched_teamfight": True, "timing_quality": "sampled_transition"}))
     return out
 
 
 def _pickoff_events(me: PlayerMatch, teamfights) -> list[EventCandidate]:
-    """Твои убийства ВНЕ драк — пикоффы (позитивные моменты: не только ошибки)."""
+    """Discover provider-recorded kills outside teamfights for retrospective review."""
     out: list[EventCandidate] = []
-    for k in me.kills_log:
-        t = k.get("time")
+    for kill in me.kills_log:
+        t = kill.get("time")
         if t is None or any(tf.start - 5 <= t <= tf.end + 5 for tf in teamfights):
-            continue  # убийство внутри драки — часть тимфайта
-        victim = (k.get("key", "") or "").replace("npc_dota_hero_", "").replace("_", " ")
+            continue
+        victim = (kill.get("key", "") or "").replace("npc_dota_hero_", "").replace("_", " ")
         out.append(EventCandidate(
             type=EventType.PICKOFF, game_time=t, involves_me=True,
-            summary=f"твой пикофф ({victim}) на {t // 60}:{t % 60:02d}",
-            data={"victim": victim}))
+            summary=f"убийство ({victim}) в журнале {int(t) // 60}:{int(t) % 60:02d}",
+            data={"victim": victim, "timing_quality": "provider_event",
+                  "decision_quality": "unassessed"}))
     return out
 
 
-_DECISION_WINDOW = 30   # сек назад от смерти, где ищем точку решения
-_SAFE_HP_FRAC = 0.85    # «ещё в безопасности» — доля HP выше этой
-_MAX_EPISODES = 25      # кэп эпизодов на матч (важнейшие по severity), чтобы не заваливать
+_MAX_EPISODES = 25  # Navigation limit only; not an assessment of player choices.
 
 
-def _decision_time(parsed: ParsedReplay | None, my_slot: int, ev: EventCandidate) -> int:
-    """Момент, когда у игрока ещё была осмысленная альтернатива.
-
-    Для смерти это НЕ момент смерти (hp=0, уже поздно) и НЕ произвольные −5с, а последняя
-    секунда перед финальным спадом HP — когда ты был ещё в безопасности и выбрал заход/позицию
-    (альтернатива «не идти / TP» ещё существовала). Фолбэк — точка макс-HP в окне. Для прочих
-    типов событий — время самого события.
-    """
-    if ev.type != EventType.DEATH or parsed is None:
-        return ev.game_time
-    death_t = ev.game_time
-    lo = max(0, death_t - _DECISION_WINDOW)
-    candidates: list[tuple[int, float]] = []
-    for f in parsed.frames:
-        if f.time < lo or f.time >= death_t:
-            continue
-        u = f.units.get(my_slot)
-        if u is None or not u.alive or not u.max_hp:
-            continue
-        candidates.append((f.time, u.hp / u.max_hp))
-    if not candidates:
-        return death_t
-    safe = [t for t, frac in candidates if frac >= _SAFE_HP_FRAC]
-    if safe:
-        return max(safe)
-    return max(candidates, key=lambda c: c[1])[0]
-
-
-def _severity(moment: ScoredMoment, parsed: ParsedReplay | None, my_slot: int,
-              decision_time: int) -> float:
-    sev = moment.score
-    ev = moment.event
-    if ev.type == EventType.DEATH and parsed is not None:
-        # оцениваем состояние в ТОЧКЕ РЕШЕНИЯ (заход), не в момент смерти (там hp=0)
-        info = info_state_at(parsed, decision_time, my_slot)
-        if info and info.my_max_hp and info.my_hp / info.my_max_hp > 0.6 \
-                and info.unseen_enemies >= 3:
-            sev += 5.0  # зашёл на фулл-ХП вслепую — острый эпизод для deep-pick
-    return sev
+def _severity(moment: ScoredMoment, parsed: ParsedReplay | None, my_slot: int) -> float:
+    # Retrospective navigation priority only; no inferred choice time or blame.
+    return moment.score
 
 
 def build_episodes(match: Match, parsed: ParsedReplay | None,
@@ -124,19 +92,20 @@ def build_episodes(match: Match, parsed: ParsedReplay | None,
         base += _death_events(parsed, my_slot, match.teamfights)
     benches = player_benchmarks(match, account_id)
     moments = score_events(base, benches, match, account_id, top_n=10_000)
+    ordinals: dict[tuple, int] = {}
     episodes = []
     for m in moments:
-        dt = _decision_time(parsed, my_slot, m.event)
-        episodes.append(Episode(moment=m, severity=_severity(m, parsed, my_slot, dt),
-                                decision_time=dt))
-    # кэп по важности, затем хронологически — не заваливаем десятками минорных пикоффов
-    episodes.sort(key=lambda e: e.severity, reverse=True)
+        key = (m.event.type.value, m.event.game_time)
+        ordinal = ordinals.get(key, 0)
+        ordinals[key] = ordinal + 1
+        eid = f"incident:{match.match_id}:{my_slot}:{key[0]}:{key[1]}:{ordinal}"
+        episodes.append(Episode(m, _severity(m, parsed, my_slot), eid))
+    episodes.sort(key=lambda e: (-e.severity, e.moment.event.game_time, e.episode_id))
     episodes = episodes[:_MAX_EPISODES]
     episodes.sort(key=lambda e: e.moment.event.game_time)
     return episodes
 
 
 def select_deep(episodes: list[Episode], n: int = 1) -> list[Episode]:
-    ranked = sorted(episodes, key=lambda e: (
-        VERDICT_RANK.get(e.moment.verdict, 9), -e.severity, e.moment.event.game_time))
+    ranked = sorted(episodes, key=lambda e: (-e.severity, e.moment.event.game_time, e.episode_id))
     return ranked[:max(0, n)]

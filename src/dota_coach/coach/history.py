@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import tempfile
 from pathlib import Path
 
 from dota_coach.coach.brief import CoachBrief, brief_to_dict, parse_brief
@@ -13,6 +15,8 @@ def _history_path(account_id: int | None, cache_dir: Path) -> Path:
 
 
 def load_history(account_id: int | None, cache_dir: Path = Path("cache")) -> list[CoachBrief]:
+    if account_id is None:
+        return []
     path = _history_path(account_id, cache_dir)
     if not path.exists():
         return []
@@ -27,11 +31,37 @@ def load_history(account_id: int | None, cache_dir: Path = Path("cache")) -> lis
 
 
 def save_brief(account_id: int | None, brief: CoachBrief, cache_dir: Path = Path("cache")) -> None:
+    if account_id is None:
+        return
     cache_dir.mkdir(parents=True, exist_ok=True)
     path = _history_path(account_id, cache_dir)
     existing = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
-    existing.append(brief_to_dict(brief))
-    path.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = brief_to_dict(brief)
+    replaced = False
+    if brief.generated_for_matches:
+        for index in range(len(existing) - 1, -1, -1):
+            previous = existing[index]
+            if (sorted(previous.get("generated_for_matches", [])) == sorted(brief.generated_for_matches)
+                    and previous.get("detector_version", "") == brief.detector_version
+                    and previous.get("source_version", "") == brief.source_version
+                    and previous.get("schema_version") == brief.schema_version):
+                existing[index] = payload
+                replaced = True
+                break
+    if not replaced:
+        existing.append(payload)
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", dir=cache_dir,
+                                         suffix=".tmp", delete=False) as stream:
+            temp_path = Path(stream.name)
+            json.dump(existing, stream, ensure_ascii=False, indent=2)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temp_path, path)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
 
 
 def latest_brief(account_id: int | None, cache_dir: Path = Path("cache")) -> CoachBrief | None:

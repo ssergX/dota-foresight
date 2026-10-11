@@ -1,65 +1,42 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from dota_coach.coach.episode_card import EpisodeCard, build_card
 from dota_coach.coach.episode_note import EpisodeNote, explain_note
 from dota_coach.coach.llm import CoachLLM
-from dota_coach.coach.match_context import match_context_at, render_match_context
 from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.coach.moment_coach import explain_scored
 from dota_coach.episodes import Episode, build_episodes, select_deep, slot_index
 from dota_coach.models import Match, ParsedReplay
+from dota_coach.decisions.contracts import OpportunityLedger
 
 
 @dataclass
 class MatchReview:
     episodes: list[Episode]
     cards: list[EpisodeCard]
-    notes: dict[int, EpisodeNote]        # game_time -> короткий тренерский комментарий
-    deep_briefs: dict[int, MomentBrief]  # game_time -> полный разбор (1-2 острых)
-    contexts: dict[int, str] = field(default_factory=dict)  # game_time -> факт-строка контекста
-
-
-def _try_llm(fn, *args):
-    """Ответ claude -p бывает кривым JSON (стохастичность, неэкранированные кавычки).
-    Один ретрай, затем мягко пропускаем эпизод — один плохой ответ не должен ронять
-    весь разбор матча (карточка+клип эпизода остаются, просто без текста)."""
-    for _ in range(2):
-        try:
-            return fn(*args)
-        except Exception:   # noqa: BLE001 - резилиентность: плохой ответ не валит прогон
-            continue
-    return None
+    notes: dict[str, EpisodeNote]
+    deep_briefs: dict[str, MomentBrief]
+    ledger: OpportunityLedger = OpportunityLedger()
 
 
 def review_match(match: Match, parsed: ParsedReplay | None, account_id: int | None,
-                 llm: CoachLLM, deep_n: int = 1) -> MatchReview:
+                 llm: CoachLLM | None = None, deep_n: int = 1) -> MatchReview:
     me = match.player_by_account(account_id)
     my_slot = slot_index(me.player_slot) if me else 0
     episodes = build_episodes(match, parsed, account_id)
     cards = [build_card(e, parsed, my_slot) for e in episodes]
-    info_by_time = {c.game_time: c.info for c in cards}
-    deep_set = {e.moment.event.game_time for e in select_deep(episodes, min(deep_n, 2))}
+    info_by_id = {c.episode_id: c.info for c in cards}
+    deep_set = {e.episode_id for e in select_deep(episodes, min(deep_n, 2))}
 
-    contexts: dict[int, str] = {}
-    notes: dict[int, EpisodeNote] = {}
-    deep_briefs: dict[int, MomentBrief] = {}
+    notes: dict[str, EpisodeNote] = {}
+    deep_briefs: dict[str, MomentBrief] = {}
     for e in episodes:
-        gt = e.moment.event.game_time
-        info = info_by_time.get(gt)
-        block = ""
-        if me is not None:   # контекст матча (экономика/итемы/карта) — знаемо в моменте
-            dt = e.decision_time if e.decision_time is not None else gt
-            block = render_match_context(match_context_at(match, me, parsed, dt))
-            contexts[gt] = block
-        if gt in deep_set:
-            brief = _try_llm(explain_scored, e.moment, llm, info, block)   # полный разбор
-            if brief is not None:
-                deep_briefs[gt] = brief
+        eid = e.episode_id
+        info = info_by_id.get(eid)
+        if eid in deep_set:
+            deep_briefs[eid] = explain_scored(e.moment, llm, info)
         else:
-            note = _try_llm(explain_note, e, info, llm, block)            # короткий комментарий
-            if note is not None:
-                notes[gt] = note
-    return MatchReview(episodes=episodes, cards=cards, notes=notes,
-                       deep_briefs=deep_briefs, contexts=contexts)
+            notes[eid] = explain_note(e, info, llm)
+    return MatchReview(episodes=episodes, cards=cards, notes=notes, deep_briefs=deep_briefs)

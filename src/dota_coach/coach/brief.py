@@ -23,7 +23,12 @@ class CoachBrief:
     focus_metric: str = ""
     focus_value: float = 0.0
     focus_direction: str = "lower_is_better"
-    schema_version: int = 2
+    schema_version: int = 3
+    focus_role: int | None = None
+    detector_version: str = ""
+    source_version: str = ""
+    # Unknown patch/source coverage deliberately blocks longitudinal claims.
+    coverage_signature: str = ""
     leaks_snapshot: list[dict] = field(default_factory=list)
     baseline_reset: bool = False   # рантайм-флаг (НЕ сериализуется): прошлый фокус переименован
 
@@ -72,6 +77,10 @@ def parse_brief(raw: str | dict) -> CoachBrief:
         focus_direction=str(data.get("focus_direction") or "lower_is_better"),
         schema_version=int(data.get("schema_version", 2)),
         leaks_snapshot=list(data.get("leaks_snapshot", [])),
+        focus_role=data.get("focus_role"),
+        detector_version=str(data.get("detector_version") or ""),
+        source_version=str(data.get("source_version") or ""),
+        coverage_signature=str(data.get("coverage_signature") or ""),
     )
 
 
@@ -89,4 +98,8 @@ def brief_to_dict(b: CoachBrief) -> dict:
         "focus_direction": b.focus_direction,
         "schema_version": b.schema_version,
         "leaks_snapshot": b.leaks_snapshot,
+        "focus_role": b.focus_role,
+        "detector_version": b.detector_version,
+        "source_version": b.source_version,
+        "coverage_signature": b.coverage_signature,
     }

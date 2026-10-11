@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from dota_coach.evidence.contracts import ReplayManifest
 
 
 class EventType(str, Enum):
@@ -91,9 +95,9 @@ class Objective:
     type: str
     slot: int | None = None
     key: str | None = None
-    team: int | None = None          # 2 Radiant / 3 Dire (напр. сторона убийцы Рошана)
+    team: int | None = None
     player_slot: int | None = None
-    unit: str | None = None          # кто снёс (герой/крип) для building_kill
+    unit: str | None = None
 
 
 @dataclass(frozen=True)
@@ -168,31 +172,38 @@ class ClockRead:
 @dataclass(frozen=True)
 class UnitState:
     slot: int
-    x: float
-    y: float
-    hp: int
-    max_hp: int
-    mana: float
-    level: int
-    xp: int
-    alive: bool
+    x: float | None
+    y: float | None
+    hp: int | None
+    max_hp: int | None
+    mana: float | None
+    level: int | None
+    xp: int | None
+    alive: bool | None
+    entity_index: int | None = None
+    generation: int = 0
 
 
 @dataclass(frozen=True)
 class ReplayFrame:
-    time: int
+    time: float
     units: dict[int, UnitState]
+    tick: int | None = None
+    sequence: int | None = None
 
 
 @dataclass(frozen=True)
 class WardEvent:
     id: int
-    time: int
+    time: float
     kind: str      # "obs" | "sentry"
-    team: int      # 2 Radiant / 3 Dire
-    x: float
-    y: float
+    team: int | None      # 2 Radiant / 3 Dire, None = unknown
+    x: float | None
+    y: float | None
     op: str        # "placed" | "gone"
+    generation: int = 0
+    tick: int | None = None
+    sequence: int | None = None
 
 
 @dataclass(frozen=True)
@@ -203,12 +214,15 @@ class ParsedReplay:
     frames: list[ReplayFrame]
     teams: dict[int, int] = field(default_factory=dict)   # slot -> team (2/3)
     wards: list[WardEvent] = field(default_factory=list)
+    manifest: ReplayManifest | None = None
 
-    def frame_at(self, t: int) -> "ReplayFrame | None":
+    def frame_at(self, t: float, max_age: float | None = 1.0) -> "ReplayFrame | None":
         best = None
         for f in self.frames:            # frames отсортированы по time на парсинге
             if f.time <= t:
                 best = f
             else:
                 break
+        if best is not None and max_age is not None and t - best.time > max_age:
+            return None
         return best

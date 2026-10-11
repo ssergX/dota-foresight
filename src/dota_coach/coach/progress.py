@@ -44,7 +44,9 @@ def _fmt(metric: str, value: float) -> str:
 
 # Отслеживает только фокус-лик ИЗ ПРЕДЫДУЩЕГО брифа (подотчётность по одному лику
 # намеренно; лик, который перестал быть фокусом, не отслеживается, пока снова не станет фокусом).
-def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak]) -> ProgressNote:
+def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak], *,
+                  match_ids: list[int] | None = None, detector_version: str = "",
+                  source_version: str = "", coverage_signature: str = "") -> ProgressNote:
     if prev_brief is None or not prev_brief.focus_leak_key:
         return ProgressNote("no_history", "", None, None,
                             "Первый разбор — базовая точка отсчёта.")
@@ -57,8 +59,24 @@ def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak]) -> P
 
     curr_leak = _find_leak(current_leaks, key)
     if curr_leak is None:
-        return ProgressNote("resolved", metric, prev_value, None,
-                            f"Лик «{_LEAK_RU.get(key, key)}» больше не срабатывает — прогресс.")
+        return ProgressNote("insufficient_data", metric, prev_value, None,
+                            "Сигнал отсутствует; это не доказывает улучшение или исправление привычки.")
+
+    comparable = (
+        bool(match_ids) and bool(prev_brief.generated_for_matches)
+        and not set(match_ids).intersection(prev_brief.generated_for_matches)
+        and len(match_ids) == len(set(match_ids))
+        and len(prev_brief.generated_for_matches) == len(set(prev_brief.generated_for_matches))
+        and prev_brief.focus_role is not None and curr_leak.role == prev_brief.focus_role
+        and metric == curr_leak.metric and direction == curr_leak.direction
+        and bool(detector_version) and detector_version == prev_brief.detector_version
+        and bool(source_version) and source_version == prev_brief.source_version
+        and bool(coverage_signature) and coverage_signature == prev_brief.coverage_signature
+        and not prev_brief.baseline_reset
+    )
+    if not comparable:
+        return ProgressNote("insufficient_data", metric, prev_value, curr_leak.value,
+                            "Недостаточно сравнимых данных: нужны отдельные периоды, одинаковые роль, версии и покрытие.")
 
     curr_value = curr_leak.value
     delta = curr_value - prev_value
@@ -72,9 +90,9 @@ def compare_focus(prev_brief: CoachBrief | None, current_leaks: list[Leak]) -> P
     if not improved and not regressed:
         status, word = "flat", "без сдвига"
     elif improved:
-        status, word = "improved", "прогресс"
+        status, word = "improved", "метрика снизилась" if direction != "higher_is_better" else "метрика выросла"
     else:
-        status, word = "regressed", "регресс"
+        status, word = "regressed", "метрика выросла" if direction != "higher_is_better" else "метрика снизилась"
 
-    text = f"{metric_ru}: {_fmt(metric, prev_value)} → {_fmt(metric, curr_value)} — {word}."
+    text = f"{metric_ru}: {_fmt(metric, prev_value)} → {_fmt(metric, curr_value)} — {word}. Качество решений по этой метрике не установлено."
     return ProgressNote(status, metric, prev_value, curr_value, text)

@@ -17,7 +17,11 @@ class Row:
 
 def build_rows(matches: list[Match], account_id: int | None) -> list[Row]:
     rows: list[Row] = []
+    seen: set[int] = set()
     for m in matches:
+        if m.match_id in seen:
+            continue
+        seen.add(m.match_id)
         me = m.player_by_account(account_id)
         if me is None:
             continue

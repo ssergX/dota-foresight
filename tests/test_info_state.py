@@ -56,26 +56,23 @@ def test_my_resources_and_view_from_enemy_side():
 def test_dead_enemy_not_counted_visible():
     r = _replay([_frame(0, (0, 0), (100, 0), en_alive=False)])
     s = info_state_at(r, 0, my_slot=0)
-    assert s.enemies[0].alive is False
-    assert s.unseen_enemies == 0                     # мёртвых не считаем «пропавшими»
+    assert s.enemies[0].alive is None  # hidden world death is not team knowledge
+    assert s.enemies[0].x is None and s.enemies[0].hp_frac is None
+    assert s.enemies[0].missing_for is None
 
 
-def test_render_knowable_omits_hidden_ground_truth():
-    # заземление для ОЦЕНКИ РЕШЕНИЯ не должно зависеть от ground-truth о скрытых врагах
-    # (enemies_near) — это анти-хиндсайт на уровне данных, а не просьбы в промпте
+def test_future_ward_reuse_does_not_change_past_visibility():
     from dataclasses import replace
+    wards = [WardEvent(7, 0, "obs", 2, 5000, 0, "placed"),
+             WardEvent(7, 20, "obs", 2, 5000, 0, "gone")]
+    r = _replay([_frame(10, (0, 0), (5000, 0))], wards)
+    changed = replace(r, wards=wards + [WardEvent(7, 30, "obs", 2, 10000, 0, "placed")])
+    assert info_state_at(r, 10, 0) == info_state_at(changed, 10, 0)
 
-    from dota_coach.coach.info_state import EnemyInfo, InfoState, render_knowable
 
-    base = InfoState(
-        time=600, my_slot=0, my_x=0.0, my_y=0.0, my_hp=500, my_max_hp=1000,
-        my_mana=100.0, my_level=9, my_alive=True,
-        enemies=[EnemyInfo(5, "CDOTA_Unit_Hero_Pudge", 9000, 9000, True, False, 40)],
-        unseen_enemies=1, max_missing_for=40,
-        allies_near=0, nearest_ally_dist=5000.0, enemies_near=0, enemies_near_visible=0,
-        zone="на половине противника",
-    )
-    leaky = replace(base, enemies_near=3, enemies_near_visible=0)   # 3 скрытых реально рядом
-    assert render_knowable(base) == render_knowable(leaky)
-    txt = render_knowable(base)
-    assert "HP 500/1000" in txt and "на половине противника" in txt   # знаемое на месте
+def test_between_samples_retains_estimated_sample_and_expires():
+    r = _replay([_frame(10, (0, 0), (100, 0))])
+    assert info_state_at(r, 11, 0).enemies[0].visible is True
+    assert info_state_at(r, 12, 0) is None
+    r.frames[0].units.pop(0)
+    assert info_state_at(r, 10, 0) is None

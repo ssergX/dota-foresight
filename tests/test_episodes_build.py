@@ -66,9 +66,8 @@ def _replay_blind_full_hp_death():
                         frames=frames, teams={1: 2, 6: 3, 7: 3, 8: 3})
 
 
-def test_death_severity_bonus_uses_pre_death_state():
+def test_death_priority_does_not_invent_a_choice_five_seconds_before():
     from dota_coach.episodes import _severity
     eps = build_episodes(_match_with_death(), _replay_blind_full_hp_death(), account_id=7)
     death = next(e for e in eps if e.moment.event.game_time == 600)
-    # 5с до смерти: full HP + 3 непросвеченных -> бонус +5 к базовому score
-    assert death.severity >= death.moment.score + 5.0
+    assert death.severity == death.moment.score

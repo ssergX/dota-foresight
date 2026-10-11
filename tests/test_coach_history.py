@@ -35,7 +35,7 @@ def test_brief_roundtrip_keeps_snapshot_and_version(tmp_path):
                                     "direction": "higher_is_better", "role": 5}])
     save_brief(7, b, cache_dir=tmp_path)
     got = latest_brief(7, cache_dir=tmp_path)
-    assert got.schema_version == 2
+    assert got.schema_version == 3
     assert got.leaks_snapshot[0]["key"] == "low_obs"
 
 

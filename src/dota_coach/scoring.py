@@ -14,8 +14,6 @@ def _impact(ev: EventCandidate) -> float:
         return abs(ev.data.get("delta", 0)) / 100.0
     if ev.type == EventType.OBJECTIVE:
         return 3.0
-    if ev.type == EventType.PICKOFF:
-        return 2.0
     if ev.type == EventType.ITEM_TIMING:
         return 1.5
     if ev.type == EventType.DEATH:
@@ -34,21 +32,14 @@ def _score_one(ev: EventCandidate, weak_count: int) -> ScoredMoment:
     confidence = Confidence.LOW
 
     if ev.type == EventType.NETWORTH_SWING:
-        # просадка нетворса — это СЛЕДСТВИЕ, а не доказанное решение: без данных о цели
-        # действия / созданном пространстве / альтернативах не клеймим ошибкой (как и слитую
-        # драку ниже). Остаётся сигналом-маркером времени для ручного разбора.
         verdict = Verdict.NOT_ENOUGH_INFO
-        reasons.append("измеримая просадка нетворса — следствие, нужен ручной разбор")
+        reasons.append("изменение нетворса — повод для просмотра, причина и решение не установлены")
     elif ev.type == EventType.TEAMFIGHT and ev.data.get("my_gold_delta", 0) < 0:
         # lost fight, but no vision/positioning proof -> do NOT call it a mistake
         verdict = Verdict.NOT_ENOUGH_INFO
         reasons.append("слитая драка — нужен ручной разбор (нет данных о позиции/вижене)")
     elif ev.type == EventType.DEATH:
         reasons.append("твоя смерть")
-    elif ev.type == EventType.PICKOFF:
-        reasons.append("твой пикофф вне драки")
-    elif ev.type == EventType.OBJECTIVE:
-        reasons.append("объектив с твоим участием")
 
     if weak_count and ev.type == EventType.ITEM_TIMING:
         reasons.append("на фоне слабых бенчмарков фарма")

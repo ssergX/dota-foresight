@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 *.egg-info/
 .venv/
+.runtime/
 build/
 dist/
 # runtime artifacts
@@ -15,5 +16,13 @@ coach.html
 leaks.html
 replay_tool/replay_tool
 replay_tool/replay_tool.exe
+replay_tool/replay_names.exe
 spike_replay/
+*.dem
+*.dem.*
+*.part
+replay_tool/replay_names
 .superpowers/
+.playwright-mcp/
+# Temporary pytest paths created by Windows argument parsing during local verification
+/UserszxcqwDesktopdota-foresight-masteroutverificationpytest-*/

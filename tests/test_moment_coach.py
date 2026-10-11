@@ -1,47 +1,35 @@
-import json
-
 from dota_coach.coach.llm import FakeLLM
-from dota_coach.coach.moment_coach import explain_moment
+from dota_coach.coach.moment_coach import explain_moment, explain_scored
 from dota_coach.models import Confidence, EventCandidate, EventType, ScoredMoment, Verdict
 
-_CANNED = json.dumps({
-    "headline": "заголовок-от-ллм", "hypothesis": "вероятно зашёл без вижна",
-    "process_question": "был ли эскейп?", "checklist": ["проверь варды", "проверь CD"],
-    "principle": "вижн перед заходом",
-})
+
+def _m(score, verdict, time):
+    return ScoredMoment(EventCandidate(EventType.NETWORTH_SWING, time, True,
+                        "future result", {"delta": -600}), score, Confidence.HIGH, verdict)
 
 
-def _m(score, verdict, t, etype=EventType.NETWORTH_SWING):
-    ev = EventCandidate(type=etype, game_time=t, involves_me=True, summary="", data={"delta": -600})
-    return ScoredMoment(event=ev, score=score, confidence=Confidence.HIGH, verdict=verdict, reasons=["r"])
-
-
-def test_explain_builds_brief_and_stamps_identity_by_code():
-    moments = [_m(3.0, Verdict.NOT_ENOUGH_INFO, 100), _m(6.0, Verdict.MISTAKE, 845)]
-    llm = FakeLLM(_CANNED)
-    brief = explain_moment(moments, llm)
-    assert brief.headline == "заголовок-от-ллм"          # текст от ЛЛМ
-    assert brief.checklist == ["проверь варды", "проверь CD"]
-    # идентичность ставит КОД по выбранному фокусу (mistake @ 845), не ЛЛМ:
+def test_unverified_mistake_cannot_authorize_llm_accusations():
+    llm = FakeLLM('{"headline": "Ты виноват"}')
+    brief = explain_moment([_m(3., Verdict.NEUTRAL, 100), _m(6., Verdict.MISTAKE, 845)], llm)
     assert brief.game_time == 845
-    assert brief.verdict == "mistake"
+    assert brief.verdict == "not_enough_info"
     assert brief.event_type == "networth_swing"
-    assert len(llm.calls) == 1
+    assert "ручного" in brief.headline
+    assert llm.calls == []
 
 
-def test_explain_no_moments_returns_none_and_skips_llm():
-    llm = FakeLLM(_CANNED)
+def test_explain_no_moments_returns_none():
+    llm = FakeLLM("{}")
     assert explain_moment([], llm) is None
     assert llm.calls == []
 
 
-def test_explain_scored_stamps_identity_from_given_moment():
-    from dota_coach.coach.moment_coach import explain_scored
-    ev = EventCandidate(type=EventType.DEATH, game_time=1234, involves_me=True,
-                        summary="", data={})
-    moment = ScoredMoment(event=ev, score=5.0, confidence=Confidence.LOW,
-                          verdict=Verdict.NEUTRAL)
-    brief = explain_scored(moment, FakeLLM(_CANNED))
-    assert brief.game_time == 1234
-    assert brief.verdict == "neutral"
-    assert brief.event_type == "death"
+def test_future_data_changes_do_not_change_legacy_explanation():
+    moment = _m(3., Verdict.MISTAKE, 100)
+    llm = FakeLLM("{}")
+    before = explain_scored(moment, llm)
+    moment.event.summary = "team killed everyone"
+    moment.event.data = {"my_gold_delta": 9000, "deaths": 5, "hidden_enemies": 5}
+    moment.reasons = ["wrong decision"]
+    assert explain_scored(moment, llm) == before
+    assert llm.calls == []

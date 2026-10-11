@@ -26,7 +26,8 @@ def test_report_lists_leaks():
                 magnitude="в среднем 11.0 смертей за игру", example_matches=[1, 2],
                 confidence=Confidence.HIGH)
     html = render_report(8001, moments=[], leaks=[leak], video_filename=None, offset=0.0)
-    assert "Слишком много смертей" in html
+    assert "Описательный сигнал: feeding" in html
+    assert "Слишком много смертей" not in html
     assert "в среднем 11.0" in html
 
 
@@ -39,7 +40,7 @@ def test_report_without_video_has_no_video_tag():
 def test_report_escapes_html_special_chars():
     moments = [_moment(100, "<b>drama</b> & risk")]
     leak = Leak(key="x", title="<script>alert(1)</script>", magnitude="a & b",
-                example_matches=[1], confidence=Confidence.HIGH)
+                metric="<script>alert(1)</script>", example_matches=[1], confidence=Confidence.HIGH)
     html = render_report(8001, moments, leaks=[leak], video_filename=None, offset=0.0)
     # raw HTML-special content must NOT appear unescaped
     assert "<b>drama</b>" not in html

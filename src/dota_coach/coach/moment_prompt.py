@@ -1,56 +1,22 @@
+"""Legacy incident prompt. Unstructured data has no verified knowledge boundary."""
 from __future__ import annotations
-
 from dota_coach.models import ScoredMoment
 
 _SYSTEM = (
-    "Ты — строгий, честный тренер по Dota 2. Разбираешь ОДИН ключевой момент матча.\n"
-    "Жёсткие правила:\n"
-    "1. Судишь процесс и решение по входным данным, НИКОГДА по исходу матча. "
-    "Побед/поражений тебе не дают — не рассуждай о них. Про сами драки/размены тоже "
-    "пиши нейтрально (размен удался/не удался, зашёл с информацией/вслепую), а не в "
-    "терминах итога.\n"
-    "2. Данные о моменте тонкие — ты НЕ видел геймплей. Формулируй ГИПОТЕЗУ («вероятно…»), "
-    "а не факт. Уважай вердикт детектора: если not_enough_info — прямо скажи, что нужен "
-    "ручной просмотр, и дай что проверить, без обвинений.\n"
-    "3. Дай 2–3 пункта конкретного проверяемого чеклиста (что посмотреть, в т.ч. на записи).\n"
-    "4. Пиши по-русски.\n"
-    "Верни СТРОГО JSON-объект такой формы (без markdown-обёртки):\n"
-    '{"headline": str, "hypothesis": str, "process_question": str, '
-    '"checklist": [str], "principle": str}'
+    "Ты редактируешь описание повода для ручного просмотра Dota 2. "
+    "Проверенного критерия решения нет. Не устанавливай ошибку, причину или лучший ход; "
+    "не формулируй гипотезу о поведении игрока по исходу. "
+    'Верни JSON: {"headline": str, "hypothesis": str, "process_question": str, '
+    '"checklist": [str], "principle": str}. Укажи недостаток данных.'
 )
 
 
-def _fmt_time(sec: int) -> str:
-    return f"{sec // 60}:{sec % 60:02d}"
-
-
-def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = "",
-                        context: str = "") -> list[dict]:
+def build_moment_prompt(moment: ScoredMoment, principle: str, info_block: str = "") -> list[dict]:
+    # Summaries, reasons, event.data and arbitrary strings can carry future/hidden truth.
     ev = moment.event
-    reasons = "; ".join(moment.reasons) or "(нет)"
-    numbers = ", ".join(f"{k}={v}" for k, v in ev.data.items()) or "(нет)"
-    knowable = f"\n{info_block}\n" if info_block else ""
-    ctx = f"{context}\n" if context else ""
-    guidance = (
-        "Разбери этот момент строго в заданном JSON-формате."
-        if not info_block else
-        "Разбери этот момент строго в заданном JSON-формате. Опирайся на блок «что было "
-        "знаемо» как на ФАКТЫ (непросвеченные враги и их длительность пропажи, твои ресурсы) — "
-        "это то, что читалось. Отделяй факт из данных от гипотезы о твоём решении."
-    )
     user = (
-        "Фокус-момент матча:\n"
-        f"- тип: {ev.type.value}\n"
-        f"- время: {_fmt_time(ev.game_time)}\n"
-        f"- вердикт детектора: {moment.verdict.value}\n"
-        f"- причины разметки: {reasons}\n"
-        f"- числа: {numbers}\n"
-        f"{knowable}\n"
-        f"{ctx}"
-        f"Тренерский принцип для момента этого типа:\n{principle}\n\n"
-        f"{guidance}"
+        f"Повод для просмотра: {ev.type.value}, {int(ev.game_time) // 60}:{int(ev.game_time) % 60:02d}.\n"
+        "Статус: not_enough_info. Проверенный критерий отсутствует.\n"
+        "Проверь на записи доступную до выбора информацию, ресурсы и возможные действия."
     )
-    return [
-        {"role": "system", "content": _SYSTEM},
-        {"role": "user", "content": user},
-    ]
+    return [{"role": "system", "content": _SYSTEM}, {"role": "user", "content": user}]

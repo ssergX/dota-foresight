@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Callable
+from math import isfinite
 
 from dota_coach.leaks.rows import Row
 from dota_coach.leaks.thresholds import Thresholds
@@ -29,6 +30,13 @@ def detector(*, key: str, title: str, roles: tuple[int, ...], requires: tuple[st
              impact: float, phase: str, family: str):
     def deco(fn: Detector) -> Detector:
         def wrapper(rows, role, th):
+            # Coverage belongs to the target benchmark, not any benchmark dict.
+            target = {"farm_below_bracket": "gold_per_min", "level_behind": "xp_per_min",
+                      "present_no_damage": "hero_damage_per_min", "low_tower_damage": "tower_damage"}.get(key)
+            if target:
+                rows = [r for r in rows if _valid_pct(r.me.benchmarks.get(target))]
+                if len(rows) < 5:
+                    return None
             leak = fn(rows, role, th)
             if leak is not None:
                 # идентичность лика ставит ОДНО место — обёртка, из метаданных декоратора.
@@ -55,6 +63,13 @@ def _present(value) -> bool:
     if isinstance(value, (list, tuple, dict, str)):
         return len(value) > 0
     return True
+
+
+def _valid_pct(value) -> bool:
+    if not isinstance(value, dict):
+        return False
+    pct = value.get("pct")
+    return isinstance(pct, (int, float)) and not isinstance(pct, bool) and isfinite(pct) and 0 <= pct <= 1
 
 
 def filter_rows(rows: list[Row], requires: tuple[str, ...]) -> list[Row]:

@@ -1,74 +1,58 @@
 from dota_coach.coach.brief import CoachBrief
 from dota_coach.coach.progress import compare_focus
-from dota_coach.models import Confidence, Leak
+from dota_coach.models import Leak
 
 
-def _leak(key, metric, value, threshold, direction):
-    return Leak(key=key, title=key, magnitude="", example_matches=[],
-                confidence=Confidence.HIGH, metric=metric, value=value,
-                threshold=threshold, direction=direction)
+def _leak(value=9., role=5):
+    return Leak(key="feeding", title="Смерти", magnitude="", metric="deaths_per_game", value=value,
+                threshold=8., direction="lower_is_better", role=role)
 
 
-def _prior(focus_key, metric, value, direction):
-    return CoachBrief(focus_leak_key=focus_key, headline="", diagnosis="", why_it_costs="",
-                      focus_metric=metric, focus_value=value, focus_direction=direction)
+def _prior():
+    return CoachBrief("feeding", "", "", "", focus_metric="deaths_per_game",
+                      focus_value=11., focus_role=5, generated_for_matches=[1, 2],
+                      detector_version="v1", source_version="patch1", coverage_signature="covered")
 
 
-def test_no_history_when_no_prior():
-    note = compare_focus(None, [_leak("feeding", "deaths_per_game", 11.0, 8.0, "lower_is_better")])
-    assert note.status == "no_history"
+def _compare(prior, leaks, **kw):
+    meta = dict(match_ids=[3, 4], detector_version="v1", source_version="patch1",
+                coverage_signature="covered")
+    meta.update(kw)
+    return compare_focus(prior, leaks, **meta)
 
 
-def test_feeding_improved_lower_is_better():
-    prior = _prior("feeding", "deaths_per_game", 11.0, "lower_is_better")
-    curr = [_leak("feeding", "deaths_per_game", 8.5, 8.0, "lower_is_better")]
-    note = compare_focus(prior, curr)
-    assert note.status == "improved"
-    assert "прогресс" in note.text
+def test_no_history():
+    assert _compare(None, [_leak()]).status == "no_history"
 
 
-def test_feeding_regressed_lower_is_better():
-    prior = _prior("feeding", "deaths_per_game", 8.5, "lower_is_better")
-    curr = [_leak("feeding", "deaths_per_game", 12.0, 8.0, "lower_is_better")]
-    note = compare_focus(prior, curr)
-    assert note.status == "regressed"
-    assert "регресс" in note.text
+def test_missing_signal_is_unknown_even_with_matching_metadata():
+    note = _compare(_prior(), [])
+    assert note.status == "insufficient_data"
+    assert note.curr_value is None
+    assert "не доказывает" in note.text
 
 
-def test_gpm_improved_higher_is_better():
-    prior = _prior("farm_below_bracket", "gpm_pct", 0.25, "higher_is_better")
-    curr = [_leak("farm_below_bracket", "gpm_pct", 0.35, 0.4, "higher_is_better")]
-    note = compare_focus(prior, curr)
-    assert note.status == "improved"
+def test_descriptive_change_requires_comparable_periods():
+    assert _compare(_prior(), [_leak(9.)]).status == "improved"
+    assert _compare(_prior(), [_leak(12.)]).status == "regressed"
+    assert _compare(_prior(), [_leak(11.)]).status == "flat"
+    assert "Качество решений" in _compare(_prior(), [_leak(9.)]).text
 
 
-def test_resolved_when_leak_absent():
-    prior = _prior("low_obs", "obs_per_game", 1.0, "higher_is_better")
-    note = compare_focus(prior, [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")])
-    assert note.status == "resolved"
+def test_overlap_and_duplicate_ids_block_progress():
+    for ids in ([1, 3], [3, 3]):
+        assert _compare(_prior(), [_leak()], match_ids=ids).status == "insufficient_data"
 
 
-def test_flat_when_same_value():
-    prior = _prior("feeding", "deaths_per_game", 9.0, "lower_is_better")
-    curr = [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")]
-    assert compare_focus(prior, curr).status == "flat"
+def test_unknown_or_changed_role_version_coverage_block_progress():
+    for meta in (dict(source_version=""), dict(source_version="patch2"),
+                 dict(detector_version="v2"), dict(coverage_signature="partial")):
+        assert _compare(_prior(), [_leak()], **meta).status == "insufficient_data"
+    assert _compare(_prior(), [_leak(role=4)]).status == "insufficient_data"
+    assert compare_focus(_prior(), [_leak()]).status == "insufficient_data"
 
 
-def test_gpm_regressed_higher_is_better():
-    prior = _prior("farm_below_bracket", "gpm_pct", 0.35, "higher_is_better")
-    curr = [_leak("farm_below_bracket", "gpm_pct", 0.25, 0.4, "higher_is_better")]
-    note = compare_focus(prior, curr)
-    assert note.status == "regressed"
-    assert "регресс" in note.text
-
-
-def test_flat_higher_is_better():
-    prior = _prior("farm_below_bracket", "gpm_pct", 0.30, "higher_is_better")
-    curr = [_leak("farm_below_bracket", "gpm_pct", 0.30, 0.4, "higher_is_better")]
-    assert compare_focus(prior, curr).status == "flat"
-
-
-def test_no_history_when_focus_key_empty():
-    prior = _prior("", "deaths_per_game", 11.0, "lower_is_better")
-    note = compare_focus(prior, [_leak("feeding", "deaths_per_game", 9.0, 8.0, "lower_is_better")])
-    assert note.status == "no_history"
+def test_metadata_does_not_upgrade_missing_signal_to_resolved():
+    for meta in (dict(match_ids=[1, 2]), dict(source_version="patch2"),
+                 dict(coverage_signature="")):
+        assert _compare(_prior(), [], **meta).status == "insufficient_data"

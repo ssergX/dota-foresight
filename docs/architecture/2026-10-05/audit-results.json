@@ -1,0 +1,72 @@
+{
+  "dataset_kind": "synthetic_diagnostic",
+  "meaning": "Reproduced legacy defects, not passing new-system quality gates",
+  "sources_sha256": {
+    "src/dota_coach/models.py": "8d3bb94d2579e5a973e384acd1695f8af26360346f73b749d1e4c7dcadea63f3",
+    "src/dota_coach/scoring.py": "c758c792d23e108119a71387dc2d127983e58203cab6b89bcd0703faa4e37b03",
+    "src/dota_coach/coach/info_state.py": "21a8ffd07102b0ff34adbd8695fad6f5949047f169496c32540b8f4c33331c8b",
+    "src/dota_coach/coach/progress.py": "3caca939514c8cc6642f057fa5e8dd3c89d0702851257fd57088350c299af517",
+    "src/dota_coach/coach/brief.py": "da3c66b736b2ed52e98701bf4ca2a633246e0e7cb218824142b6cc6734c55d20",
+    "replay_tool/main.go": "1e2c608567e8a1c774e0b429282d3d67b79f44cd09e2c86ebc839367b8bf60a2"
+  },
+  "results": [
+    {
+      "probe": "economic_change_becomes_error",
+      "observed": [
+        "mistake",
+        "high"
+      ],
+      "audited_snapshot_observation": [
+        "mistake",
+        "high"
+      ],
+      "matches_audited_snapshot": true
+    },
+    {
+      "probe": "future_ward_changes_past_visibility",
+      "observed": [
+        true,
+        false
+      ],
+      "audited_snapshot_observation": [
+        true,
+        false
+      ],
+      "matches_audited_snapshot": true
+    },
+    {
+      "probe": "between_frames_visibility_changes_without_observation",
+      "observed": [
+        true,
+        false
+      ],
+      "audited_snapshot_observation": [
+        true,
+        false
+      ],
+      "matches_audited_snapshot": true
+    },
+    {
+      "probe": "missing_own_unit_becomes_zero_and_dead",
+      "observed": [
+        0.0,
+        0,
+        false,
+        "у реки/центр"
+      ],
+      "audited_snapshot_observation": [
+        0.0,
+        0,
+        false,
+        "у реки/центр"
+      ],
+      "matches_audited_snapshot": true
+    },
+    {
+      "probe": "missing_detector_becomes_resolved",
+      "observed": "resolved",
+      "audited_snapshot_observation": "resolved",
+      "matches_audited_snapshot": true
+    }
+  ]
+}

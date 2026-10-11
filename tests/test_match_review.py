@@ -39,37 +39,8 @@ def test_review_match_returns_notes_for_all_and_one_deep_brief():
     assert len(review.deep_briefs) == 1                       # один острый — полный разбор
     assert len(review.notes) == n - 1                         # остальные — комментарии
     # каждый эпизод покрыт ровно одним: комментарий ИЛИ бриф
-    times = {e.moment.event.game_time for e in review.episodes}
-    assert set(review.notes) | set(review.deep_briefs) == times
+    identities = {e.episode_id for e in review.episodes}
+    assert set(review.notes) | set(review.deep_briefs) == identities
     assert not (set(review.notes) & set(review.deep_briefs))
-    assert list(review.notes.values())[0].takeaway == "совет"
-
-
-def test_review_match_feeds_match_context_into_prompt():
-    canned = json.dumps({"headline": "h", "hypothesis": "g", "process_question": "q",
-                         "checklist": ["c"], "principle": "p",
-                         "situation": "s", "takeaway": "t"})
-    llm = FakeLLM(canned)
-    review = review_match(_match(), _replay(), account_id=7, llm=llm, deep_n=1)
-    assert review.contexts                               # факт-строки контекста посчитаны
-    whole = "".join(m["content"] for call in llm.calls for m in call).lower()
-    users = "".join(m["content"] for call in llm.calls for m in call
-                    if m["role"] == "user").lower()
-    assert "нетворс" in users                            # контекст матча дошёл до модели
-    for token in ("radiant_win", "radiant_score", "dire_score"):
-        assert token not in whole                        # исход-токенов нет нигде
-    for word in ("победа", "поражени", "выигр", "проигр"):
-        assert word not in users                         # system легитимно несёт анти-результат-правило
-
-
-def test_review_match_survives_malformed_llm_json():
-    # claude -p иногда отдаёт невалидный JSON (неэкранированная кавычка и т.п.);
-    # один кривой ответ не должен ронять весь разбор матча
-    class _BadLLM:
-        def complete(self, messages):
-            return '{"situation": "он сказал "ок" и зашёл", "takeaway": "x"}'   # невалидный JSON
-
-    review = review_match(_match(), _replay(), account_id=7, llm=_BadLLM(), deep_n=1)
-    assert isinstance(review, MatchReview)
-    assert len(review.episodes) >= 2                          # эпизоды построены
-    assert len(review.notes) == 0 and len(review.deep_briefs) == 0   # кривые ответы пропущены, не крэш
+    assert "проверь информацию до выбора" in list(review.notes.values())[0].takeaway
+    assert all(c.verdict.value == "not_enough_info" for c in review.cards)

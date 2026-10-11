@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import bz2
+
 import pytest
 
 from dota_coach.ingest.replay import parse_replay_jsonl
@@ -58,8 +60,9 @@ def test_parse_replay_runner_failure_raises_unavailable(tmp_path, monkeypatch):
 
     with pytest.raises(ReplayUnavailable):
         parse_replay(7, cache_dir=tmp_path,
-                     downloader=lambda url: b"\x28\xb5\x2f\xfd",
+                     downloader=lambda url: bz2.compress(b"PBDEMS2\x00fixture"),
                      runner=bad_runner)
+    assert not list(tmp_path.glob("*.jsonl"))
 
 
 def test_parse_replay_no_replay_url_raises_unavailable(tmp_path, monkeypatch):

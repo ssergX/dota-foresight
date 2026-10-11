@@ -28,7 +28,7 @@ def test_build_clips_extracts_per_episode(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "clip_extract", fake_extract)
     review = MatchReview(episodes=[_episode(600), _episode(1200)], cards=[], notes={}, deep_briefs={})
     clips = cli._build_clips(_Args(str(tmp_path)), review, start_time=None, duration=1800)
-    assert clips == {600: "clips/00.mp4", 1200: "clips/01.mp4"}
+    assert clips == {e.episode_id: f"clips/{i:02d}.mp4" for i, e in enumerate(review.episodes)}
     assert [c[0] for c in calls] == [600, 1200]
 
 

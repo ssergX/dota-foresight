@@ -3,34 +3,32 @@ from dota_coach.models import Confidence, EventCandidate, EventType, ScoredMomen
 
 
 def _moment():
-    ev = EventCandidate(type=EventType.NETWORTH_SWING, game_time=845, involves_me=True,
-                        summary="просадка", data={"delta": -650})
-    return ScoredMoment(event=ev, score=6.5, confidence=Confidence.HIGH,
-                        verdict=Verdict.MISTAKE, reasons=["измеримая просадка нетворса"])
+    return ScoredMoment(EventCandidate(EventType.TEAMFIGHT, 845, True,
+                        "future death count", {"deaths": 5, "my_gold_delta": -1000}),
+                        6.5, Confidence.HIGH, Verdict.MISTAKE,
+                        reasons=["lost fight"])
 
 
-def test_prompt_shape_and_content():
-    msgs = build_moment_prompt(_moment(), "принцип про нетворс")
+def test_prompt_is_incident_identity_and_insufficient_status_only():
+    msgs = build_moment_prompt(_moment(), "unverified causal principle")
     assert [m["role"] for m in msgs] == ["system", "user"]
     user = msgs[1]["content"]
-    assert "14:05" in user            # 845s -> 14:05
-    assert "networth_swing" in user
-    assert "mistake" in user
-    assert "принцип про нетворс" in user
+    assert "14:05" in user and "teamfight" in user and "not_enough_info" in user
+    assert "mistake" not in user and "death" not in user and "gold_delta" not in user
+    assert "unverified causal" not in user
 
 
-def test_system_fixes_json_schema_and_hypothesis_rule():
-    system = build_moment_prompt(_moment(), "p")[0]["content"]
+def test_future_outcome_and_hidden_truth_cannot_change_prompt():
+    m = _moment()
+    first = build_moment_prompt(m, "", "")
+    m.event.summary = "radiant_win true, hidden enemy behind hero"
+    m.event.data = {"deaths": 0, "my_gold_delta": 10000}
+    m.reasons = ["positive outcome"]
+    assert build_moment_prompt(m, "future knowledge", "hidden coordinates") == first
+
+
+def test_system_schema_and_no_decision_authority():
+    system = build_moment_prompt(_moment(), "")[0]["content"]
     for key in ("headline", "hypothesis", "process_question", "checklist", "principle"):
         assert key in system
-    assert "гипотез" in system.lower()   # правило «формулируй гипотезу, не факт»
-
-
-def test_prompt_never_leaks_outcome():
-    msgs = build_moment_prompt(_moment(), "p")
-    user = msgs[1]["content"].lower()
-    for banned in ("победа", "поражени", "выигр", "проигр"):
-        assert banned not in user
-    whole = "".join(m["content"] for m in msgs).lower()
-    for banned in ("radiant_win", "radiant_score", "dire_score"):
-        assert banned not in whole
+    assert "Не устанавливай ошибку" in system

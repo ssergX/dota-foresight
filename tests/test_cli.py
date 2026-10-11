@@ -88,7 +88,8 @@ def test_analyze_coach_renders_moment_brief(tmp_path, monkeypatch, capsys):
     rc = main(["analyze", "--match-id", "5", "--account-id", "111", "--coach", "--out", str(out)])
     assert rc == 0
     html = out.read_text(encoding="utf-8")
-    assert "Разбор фокус-момента" in html and "H" in html
+    assert "Разбор фокус-момента" in html and "Повод для ручного просмотра" in html
+    assert "проверенный критерий отсутствует" in html
 
 
 def test_analyze_video_offset_flag_parses():

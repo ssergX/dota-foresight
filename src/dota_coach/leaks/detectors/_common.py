@@ -28,7 +28,7 @@ def make_leak(*, role: int, rows: list[Row], metric: str, value: float,
     worst = sorted(rows, key=worst_key, reverse=worst_reverse)[:3]
     return Leak(
         key="", title="", magnitude=magnitude,
-        example_matches=[r.match_id for r in worst], confidence=Confidence.HIGH,
+        example_matches=[r.match_id for r in worst], confidence=Confidence.LOW,
         metric=metric, value=value, threshold=threshold, direction=direction,
         role=role, source=source, sample_size=len(rows),
     )

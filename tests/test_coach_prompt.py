@@ -48,7 +48,7 @@ def test_prompt_includes_prior_progress():
                        focus_direction="lower_is_better")
     progress = compare_focus(prior, _leaks())   # 14.0 -> 11.0, lower_is_better -> improved
     msgs = build_coach_prompt(_leaks(), progress, "p", prior, "feeding")
-    assert "прогресс" in msgs[1]["content"]
+    assert "Недостаточно сравнимых" in msgs[1]["content"]
 
 
 def test_prompt_includes_role_and_source():
@@ -58,7 +58,7 @@ def test_prompt_includes_role_and_source():
     msgs = build_coach_prompt([leak], None, "принципы", None, "low_obs")
     user = msgs[1]["content"]
     assert "pos5" in user or "роль" in user.lower()
-    assert "разумной планк" in user.lower() or "manual" in user  # источник порога словами
+    assert "непроверенного порога" in user.lower()
 
 
 def test_prompt_never_leaks_outcome():

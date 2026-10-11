@@ -2,11 +2,12 @@
 name = "dota-coach"
 version = "0.1.0"
 description = "Личный пост-матч AI-тренер по Dota 2 (MVP без ЛЛМ)"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "requests>=2.31",
-    # opencv 5.x требует numpy 2.x; держим 4.x ради numpy<2 (общий venv Tablichki)
-    "opencv-python>=4.9,<5",
+    # Extraction uses no OpenCV GUI, so the same headless wheel works on CI.
+    "opencv-python-headless>=4.9,<5",
     "numpy>=1.25,<2",
     "pytesseract>=0.3.10",
     "zstandard>=0.22",
@@ -14,7 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "build>=1.2", "hatchling>=1.26"]
 
 [project.scripts]
 dota-coach = "dota_coach.cli:main"
@@ -25,6 +26,16 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dota_coach"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src", "/tests", "/scripts", "/replay_tool/**/*.go",
+    "/replay_tool/go.mod", "/replay_tool/go.sum", "/assets",
+    "/.github", "/README.md", "/INSTALL.md", "/pyproject.toml",
+    "/constraints-python312.txt", "/.gitignore",
+    "/docs/architecture/**/*.md", "/docs/implementation/**/*.md", "/docs/data-spike/**/*.md",
+]
+exclude = ["**/__pycache__/**", "**/*.pyc", "**/*.exe", "**/*.dem", "**/*.dem.*"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

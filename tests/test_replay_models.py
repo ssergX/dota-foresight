@@ -22,7 +22,8 @@ def test_frame_at_exact():
 
 def test_frame_at_between_returns_latest_leq():
     r = _replay([0, 10, 20])
-    assert r.frame_at(15).time == 10
+    assert r.frame_at(10.5).time == 10
+    assert r.frame_at(15) is None
 
 
 def test_frame_at_before_first_returns_none():
@@ -32,4 +33,11 @@ def test_frame_at_before_first_returns_none():
 
 def test_frame_at_after_last_returns_last():
     r = _replay([0, 10, 20])
-    assert r.frame_at(999).time == 20
+    assert r.frame_at(999) is None
+    assert r.frame_at(999, max_age=None).time == 20
+
+
+def test_frame_at_never_reads_future_when_latest_state_stale():
+    r = _replay([0, 10])
+    assert r.frame_at(9.9) is None
+    assert r.frame_at(9.9, max_age=None).time == 0

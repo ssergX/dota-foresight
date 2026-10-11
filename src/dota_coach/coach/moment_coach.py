@@ -1,30 +1,29 @@
 from __future__ import annotations
 
-from dota_coach.coach.info_state import InfoState, render_knowable
+from dota_coach.coach.info_state import InfoState
 from dota_coach.coach.llm import CoachLLM
-from dota_coach.coach.moment_brief import MomentBrief, parse_moment_brief
+from dota_coach.coach.moment_brief import MomentBrief
 from dota_coach.coach.moment_focus import select_focus_moment
-from dota_coach.coach.moment_principles import principle_for_moment
-from dota_coach.coach.moment_prompt import build_moment_prompt
-from dota_coach.models import ScoredMoment
+from dota_coach.models import ScoredMoment, Verdict
 
 
 def explain_scored(moment: ScoredMoment, llm: CoachLLM,
-                   info_state: InfoState | None = None, context: str = "") -> MomentBrief:
-    principle = principle_for_moment(moment)
-    info_block = render_knowable(info_state) if info_state is not None else ""
-    messages = build_moment_prompt(moment, principle, info_block, context)
-    brief = parse_moment_brief(llm.complete(messages))
-    # идентичность момента ставит КОД (детерминизм + анти-результатничество):
-    brief.game_time = moment.event.game_time
-    brief.verdict = moment.verdict.value
-    brief.event_type = moment.event.type.value
-    return brief
+                   info_state: InfoState | None = None) -> MomentBrief:
+    # Legacy incident heuristics have no validated criterion/claims.
+    # An old MISTAKE label cannot authorize a model to accuse the player.
+    return MomentBrief(
+        headline="Повод для ручного просмотра",
+        hypothesis="Недостаточно данных для оценки решения: проверенный критерий отсутствует.",
+        process_question="Какая информация и какие действия были доступны до выбора?",
+        checklist=["Проверь информацию до выбора на записи.",
+                   "Проверь ресурсы, ограничения и выполнимость альтернатив."],
+        principle="Сам исход эпизода не устанавливает качество решения.",
+        game_time=moment.event.game_time, verdict=Verdict.NOT_ENOUGH_INFO.value,
+        event_type=moment.event.type.value,
+    )
 
 
 def explain_moment(moments: list[ScoredMoment], llm: CoachLLM,
-                   info_state: InfoState | None = None, context: str = "") -> MomentBrief | None:
+                   info_state: InfoState | None = None) -> MomentBrief | None:
     focus = select_focus_moment(moments)
-    if focus is None:
-        return None
-    return explain_scored(focus, llm, info_state, context)
+    return None if focus is None else explain_scored(focus, llm, info_state)

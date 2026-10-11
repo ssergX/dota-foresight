@@ -33,7 +33,7 @@ def test_focus_is_top_severity_leak(tmp_path):
     assert saved is not None and saved.focus_leak_key == brief.focus_leak_key
 
 
-def test_run_coach_second_run_reports_progress(tmp_path):
+def test_run_coach_overlapping_series_does_not_claim_progress(tmp_path):
     # pos5, obs_placed=1 -> low_obs фокус (avg 1 < порог 6); второй прогон obs=4 -> прогресс (higher_is_better)
     first = [_match(i, _me(position_est=5, deaths=3, obs_placed=1,
                            benchmarks={"gold_per_min": {"raw": 500, "pct": 0.7}})) for i in range(6)]
@@ -43,7 +43,7 @@ def test_run_coach_second_run_reports_progress(tmp_path):
     second = [_match(i, _me(position_est=5, deaths=3, obs_placed=4,
                             benchmarks={"gold_per_min": {"raw": 500, "pct": 0.7}})) for i in range(6)]
     brief2 = run_coach(second, 7, FakeLLM(_CANNED), cache_dir=tmp_path)
-    assert brief2.progress_note is not None and "прогресс" in brief2.progress_note
+    assert brief2.progress_note is not None and "Недостаточно сравнимых" in brief2.progress_note
 
 
 def test_no_leaks_skips_llm(tmp_path):
